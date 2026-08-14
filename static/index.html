@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Termo V0.1</title>
+</head>
+<body>
+    <h1>Termo Clone</h1>
+    <input type="text" id="guessInput" maxlength="5" placeholder="Enter 5 letters">
+    <button onclick="submitGuess()">Guess</button>
+    
+    <pre id="output"></pre>
+
+    <script>
+        async function submitGuess() {
+            const guess = document.getElementById('guessInput').value;
+            const output = document.getElementById('output');
+            
+            const response = await fetch('/api/guess', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ word: guess })
+            });
+            
+            const data = await response.json();
+            output.innerText = JSON.stringify(data, null, 2); 
+        }
+    </script>
+</body>
+</html>
