@@ -1,6 +1,8 @@
 const TRANSLATIONS = {
     en: {
         giveUp: "Give Up",
+        hint: "Hint",
+        noHints: "No hints left!",
         mustFill: (len) => `Fill all ${len} letters!`,
         wordWas: "The word was:",
         modalTitles: {
@@ -12,6 +14,8 @@ const TRANSLATIONS = {
     },
     pt: {
         giveUp: "Desistir",
+        hint: "Dica",
+        noHints: "Sem dicas restantes!",
         mustFill: (len) => `Preencha todas as ${len} letras!`,
         wordWas: "A palavra era:",
         modalTitles: {
@@ -34,7 +38,11 @@ let cursorIndex = 0;
 let gameOver = false;
 let gameEndState = null;
 
-let isAnimating = false; // Prevents typing while tiles are flipping
+let isAnimating = false;
+let messageTimeout = null;
+
+let spaceIndices = new Set();
+let correctIndices = new Set();
 
 const letterStatuses = {};
 
@@ -46,7 +54,37 @@ const KEYBOARD_LAYOUT = [
 
 const STATUS_PRIORITY = { "correct": 3, "present": 2, "absent": 1 };
 
+function isSpaceTile(index) {
+    return spaceIndices.has(index);
+}
+
+function getFirstValidIndex() {
+    for (let i = 0; i < wordLength; i++) {
+        if (!isSpaceTile(i)) return i;
+    }
+    return 0;
+}
+
+function getLastValidIndex() {
+    for (let i = wordLength - 1; i >= 0; i--) {
+        if (!isSpaceTile(i)) return i;
+    }
+    return 0;
+}
+
+function getNextValidIndex(fromIndex, direction) {
+    let idx = fromIndex + direction;
+    while (idx >= 0 && idx < wordLength) {
+        if (!isSpaceTile(idx)) {
+            return idx;
+        }
+        idx += direction;
+    }
+    return direction > 0 ? getLastValidIndex() : getFirstValidIndex();
+}
+
 async function initGame() {
+    clearMessage();
     const res = await fetch('/api/config');
     const config = await res.json();
     
@@ -56,8 +94,18 @@ async function initGame() {
     wordLength = config.length;
     maxAttempts = config.max_attempts;
 
-    currentGuess = Array(wordLength).fill("");
-    cursorIndex = 0;
+    spaceIndices = new Set();
+    correctIndices = new Set();
+
+    if (Array.isArray(config.space_indices)) {
+        config.space_indices.forEach(i => spaceIndices.add(i));
+    }
+    if (Array.isArray(config.spaces)) {
+        config.spaces.forEach(i => spaceIndices.add(i));
+    }
+
+    currentGuess = Array(wordLength).fill("").map((_, i) => isSpaceTile(i) ? " " : "");
+    cursorIndex = getFirstValidIndex();
 
     document.documentElement.style.setProperty('--word-length', wordLength);
 
@@ -84,8 +132,11 @@ function updateLangToggleUI() {
 }
 
 function updateUITexts() {
-    const btn = document.getElementById('giveup-btn');
-    if (btn) btn.innerText = TRANSLATIONS[currentLang].giveUp;
+    const giveUpBtn = document.getElementById('giveup-btn');
+    if (giveUpBtn) giveUpBtn.innerText = TRANSLATIONS[currentLang].giveUp;
+
+    const hintBtn = document.getElementById('hint-btn');
+    if (hintBtn) hintBtn.innerText = TRANSLATIONS[currentLang].hint;
 
     if (gameEndState) {
         const t = TRANSLATIONS[currentLang];
@@ -104,11 +155,17 @@ function updateUITexts() {
         }
 
         document.querySelector('.modal-close-btn').innerText = t.ok;
-        openModal();
+
+        // Only trigger openModal if the endgame modal is currently visible
+        const modalEl = document.getElementById('endgame-modal');
+        if (modalEl && modalEl.classList.contains('active')) {
+            openModal();
+        }
     }
 }
 
 function openModal() {
+    clearMessage();
     document.getElementById('endgame-modal').classList.add('active');
 }
 
@@ -126,15 +183,19 @@ function buildGrid() {
 
         for (let c = 0; c < wordLength; c++) {
             const tile = document.createElement('div');
-            tile.className = 'tile';
             tile.id = `tile-${r}-${c}`;
 
-            tile.addEventListener('click', () => {
-                if (!gameOver && r === currentAttempt) {
-                    cursorIndex = c;
-                    updateCurrentRow();
-                }
-            });
+            if (isSpaceTile(c)) {
+                tile.className = 'tile space-tile';
+            } else {
+                tile.className = 'tile';
+                tile.addEventListener('click', () => {
+                    if (!gameOver && r === currentAttempt) {
+                        cursorIndex = c;
+                        updateCurrentRow();
+                    }
+                });
+            }
 
             row.appendChild(tile);
         }
@@ -179,13 +240,12 @@ function handlePhysicalKeyboard(e) {
     } else if (e.key === 'Backspace' || e.key === 'Delete') {
         processInput('DEL');
     } else if (e.key === 'ArrowLeft') {
-        cursorIndex = Math.max(0, cursorIndex - 1);
+        cursorIndex = getNextValidIndex(cursorIndex, -1);
         updateCurrentRow();
     } else if (e.key === 'ArrowRight') {
-        cursorIndex = Math.min(wordLength - 1, cursorIndex + 1);
+        cursorIndex = getNextValidIndex(cursorIndex, 1);
         updateCurrentRow();
     } else {
-        // Strip accents (e.g. 'ç' -> 'c', 'á' -> 'a', 'ñ' -> 'n') and convert to uppercase
         const normalizedKey = e.key
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "")
@@ -199,23 +259,32 @@ function handlePhysicalKeyboard(e) {
 
 function processInput(key) {
     if (gameOver || isAnimating) return;
+
+    if (isSpaceTile(cursorIndex)) {
+        cursorIndex = getFirstValidIndex();
+    }
+
     if (key === 'ENTER') {
         submitGuess();
     } else if (key === 'DEL') {
         if (currentGuess[cursorIndex] !== "") {
             currentGuess[cursorIndex] = "";
-        } else if (cursorIndex > 0) {
-            cursorIndex--;
-            currentGuess[cursorIndex] = "";
+        } else {
+            const prevIndex = getNextValidIndex(cursorIndex, -1);
+            if (prevIndex !== cursorIndex) {
+                cursorIndex = prevIndex;
+                currentGuess[cursorIndex] = "";
+            }
         }
         updateCurrentRow();
     } else if (/^[A-Z]$/.test(key)) {
-        currentGuess[cursorIndex] = key;
-
-        if (cursorIndex < wordLength - 1) {
-            cursorIndex++;
+        if (!isSpaceTile(cursorIndex)) {
+            currentGuess[cursorIndex] = key;
+            const nextIndex = getNextValidIndex(cursorIndex, 1);
+            if (nextIndex > cursorIndex) {
+                cursorIndex = nextIndex;
+            }
         }
-
         updateCurrentRow();
     }
 }
@@ -225,10 +294,16 @@ function updateCurrentRow() {
         const tile = document.getElementById(`tile-${currentAttempt}-${c}`);
         if (!tile) continue;
 
+        if (isSpaceTile(c)) {
+            tile.className = "tile space-tile";
+            tile.innerText = "";
+            continue;
+        }
+
         const letter = currentGuess[c] || "";
         tile.innerText = letter;
 
-        tile.classList.remove('active-cursor', 'filled');
+        tile.className = "tile";
 
         if (letter) {
             tile.classList.add('filled');
@@ -240,96 +315,161 @@ function updateCurrentRow() {
     }
 }
 
-async function submitGuess() {
-    if (currentGuess.some(char => char === "")) {
-        showMessage(TRANSLATIONS[currentLang].mustFill(wordLength));
-        return;
-    }
+async function useHint() {
+    if (gameOver || isAnimating) return;
 
-    const wordToSubmit = currentGuess.join("");
-
-    const response = await fetch('/api/guess', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ word: wordToSubmit })
-    });
-
-    const data = await response.json();
-
-    if (data.error) {
-        showMessage(data.error);
-        return;
-    }
-
-    // Lock keyboard while animation plays
+    clearMessage();
     isAnimating = true;
 
-    const currentCursorTile = document.getElementById(`tile-${currentAttempt}-${cursorIndex}`);
-    if (currentCursorTile) currentCursorTile.classList.remove('active-cursor');
+    currentGuess = Array(wordLength).fill("").map((_, i) => isSpaceTile(i) ? " " : "");
+    updateCurrentRow();
 
-    const FLIP_DURATION = 500; // Total flip time in ms
-    const STAGGER_DELAY = 250; // Delay between each tile's start
+    try {
+        const response = await fetch('/api/hint', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ revealed_indices: Array.from(correctIndices) })
+        });
 
-    for (let i = 0; i < wordLength; i++) {
-        const letter = wordToSubmit[i];
-        const status = data.pattern[i];
-        const displayLetter = data.revealed_letters ? data.revealed_letters[i] : letter;
-        const tile = document.getElementById(`tile-${currentAttempt}-${i}`);
+        const data = await response.json();
 
-        // Trigger flip animation with staggered delay
-        setTimeout(() => {
-            tile.classList.add('flip');
-
-            // Swap letter and background color at the halfway point (when tile is edge-on)
-            setTimeout(() => {
-                tile.innerText = displayLetter;
-                tile.classList.add(status);
-                updateKeyStatus(letter, status);
-            }, FLIP_DURATION / 2);
-
-        }, i * STAGGER_DELAY);
-    }
-
-    // Process win/loss state after all flips finish
-    const totalAnimationTime = (wordLength - 1) * STAGGER_DELAY + FLIP_DURATION;
-
-    setTimeout(() => {
-        isAnimating = false;
-
-        if (data.pattern.every(s => s === "correct")) {
-            gameOver = true;
-            gameEndState = {
-                type: 'win',
-                messages: data.victory_messages
-            };
-            grayOutRemainingTiles();
-            updateUITexts();
-            disableGiveUpBtn();
+        if (data.error) {
+            isAnimating = false;
+            showMessage(TRANSLATIONS[currentLang].noHints);
             return;
         }
 
-        currentAttempt++;
+        correctIndices.add(data.hint_index);
+        await animateAndProcessResult(data);
+    } catch (err) {
+        isAnimating = false;
+        console.error(err);
+    }
+}
 
-        if (currentAttempt >= maxAttempts) {
-            gameOver = true;
-            gameEndState = {
-                type: 'lose',
-                targetWord: data.target_word,
-                messages: data.fail_messages
-            };
-            grayOutRemainingTiles();
-            updateUITexts();
-            disableGiveUpBtn();
-        } else {
-            currentGuess = Array(wordLength).fill("");
-            cursorIndex = 0;
-            updateCurrentRow();
+async function submitGuess() {
+    if (gameOver || isAnimating) return;
+
+    clearMessage();
+
+    if (currentGuess.some((char, idx) => !isSpaceTile(idx) && char === "")) {
+        const fillLength = wordLength - spaceIndices.size;
+        showMessage(TRANSLATIONS[currentLang].mustFill(fillLength));
+        return;
+    }
+
+    isAnimating = true;
+    const wordToSubmit = currentGuess.join("");
+
+    try {
+        const response = await fetch('/api/guess', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ word: wordToSubmit })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            isAnimating = false;
+            showMessage(data.error);
+            return;
         }
-    }, totalAnimationTime);
+
+        data.pattern.forEach((status, idx) => {
+            if (status === 'correct') correctIndices.add(idx);
+        });
+
+        await animateAndProcessResult(data);
+    } catch (err) {
+        isAnimating = false;
+        console.error(err);
+    }
+}
+
+function animateAndProcessResult(data) {
+    return new Promise((resolve) => {
+        isAnimating = true;
+        const rowToAnimate = currentAttempt;
+
+        const currentCursorTile = document.getElementById(`tile-${rowToAnimate}-${cursorIndex}`);
+        if (currentCursorTile) currentCursorTile.classList.remove('active-cursor');
+
+        const FLIP_DURATION = 500;
+        const STAGGER_DELAY = 250;
+
+        for (let i = 0; i < wordLength; i++) {
+            const tile = document.getElementById(`tile-${rowToAnimate}-${i}`);
+            if (!tile || isSpaceTile(i)) continue;
+
+            const letter = data.guess[i];
+            const status = data.pattern[i];
+            const displayLetter = data.revealed_letters ? data.revealed_letters[i] : letter;
+
+            setTimeout(() => {
+                tile.classList.add('flip');
+
+                setTimeout(() => {
+                    tile.innerText = displayLetter;
+                    tile.classList.add(status);
+                    if (letter !== '-') {
+                        updateKeyStatus(letter, status);
+                    }
+                }, FLIP_DURATION / 2);
+
+            }, i * STAGGER_DELAY);
+        }
+
+        const totalAnimationTime = (wordLength - 1) * STAGGER_DELAY + FLIP_DURATION;
+
+        setTimeout(() => {
+            isAnimating = false;
+
+            const isWin = data.pattern.every((s, idx) => isSpaceTile(idx) || s === "correct");
+
+            if (isWin) {
+                gameOver = true;
+                gameEndState = {
+                    type: 'win',
+                    messages: data.victory_messages
+                };
+                clearMessage();
+                grayOutRemainingTiles();
+                updateUITexts();
+                disableActionButtons();
+                openModal();
+                resolve();
+                return;
+            }
+
+            currentAttempt++;
+
+            if (currentAttempt >= maxAttempts) {
+                gameOver = true;
+                gameEndState = {
+                    type: 'lose',
+                    targetWord: data.target_word,
+                    messages: data.fail_messages
+                };
+                clearMessage();
+                grayOutRemainingTiles();
+                updateUITexts();
+                disableActionButtons();
+                openModal();
+            } else {
+                currentGuess = Array(wordLength).fill("").map((_, i) => isSpaceTile(i) ? " " : "");
+                cursorIndex = getFirstValidIndex();
+                updateCurrentRow();
+            }
+            resolve();
+        }, totalAnimationTime);
+    });
 }
 
 async function giveUp() {
-    if (gameOver) return;
+    if (gameOver || isAnimating) return;
+
+    clearMessage();
 
     const response = await fetch('/api/give-up', { method: 'POST' });
     const data = await response.json();
@@ -344,14 +484,19 @@ async function giveUp() {
     const activeTile = document.getElementById(`tile-${currentAttempt}-${cursorIndex}`);
     if (activeTile) activeTile.classList.remove('active-cursor');
 
+    clearMessage();
     grayOutRemainingTiles();
     updateUITexts();
-    disableGiveUpBtn();
+    disableActionButtons();
+    openModal();
 }
 
-function disableGiveUpBtn() {
-    const btn = document.getElementById('giveup-btn');
-    if (btn) btn.disabled = true;
+function disableActionButtons() {
+    const giveUpBtn = document.getElementById('giveup-btn');
+    if (giveUpBtn) giveUpBtn.disabled = true;
+
+    const hintBtn = document.getElementById('hint-btn');
+    if (hintBtn) hintBtn.disabled = true;
 }
 
 function updateKeyStatus(letter, newStatus) {
@@ -370,9 +515,23 @@ function updateKeyStatus(letter, newStatus) {
 
 function showMessage(text) {
     const msgEl = document.getElementById('message');
+    if (!msgEl) return;
+
     msgEl.innerText = text;
-    if (!gameOver) {
-        setTimeout(() => { if (!gameOver) msgEl.innerText = ''; }, 3000);
+    if (messageTimeout) clearTimeout(messageTimeout);
+
+    messageTimeout = setTimeout(() => {
+        msgEl.innerText = '';
+    }, 3000);
+}
+
+function clearMessage() {
+    const msgEl = document.getElementById('message');
+    if (msgEl) msgEl.innerText = '';
+
+    if (messageTimeout) {
+        clearTimeout(messageTimeout);
+        messageTimeout = null;
     }
 }
 
@@ -382,10 +541,14 @@ function grayOutRemainingTiles() {
             const tile = document.getElementById(`tile-${r}-${c}`);
             if (!tile) continue;
 
-            // Remove active cursor focus
             tile.classList.remove('active-cursor');
 
-            // If the tile hasn't been evaluated (doesn't have correct/present/absent), gray it out
+            if (isSpaceTile(c)) {
+                tile.className = "tile space-tile";
+                tile.innerText = "";
+                continue;
+            }
+
             const isEvaluated = tile.classList.contains('correct') || 
                                 tile.classList.contains('present') || 
                                 tile.classList.contains('absent');
@@ -397,5 +560,4 @@ function grayOutRemainingTiles() {
     }
 }
 
-// Start game on page load
 initGame();

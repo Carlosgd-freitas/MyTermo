@@ -33,13 +33,18 @@
 
     <h1 id="game-title">TERMO</h1>
 
-    <div id="grid"></div>
+    <div class="grid-container">
+        <div class="action-controls">
+            <button id="hint-btn" class="action-btn hint-btn" onclick="useHint()">Hint</button>
+            <button id="giveup-btn" class="action-btn giveup-btn" onclick="giveUp()">Give Up</button>
+        </div>
+        
+        <div id="grid"></div>
+    </div>
+
     <div id="message"></div>
     <div id="keyboard"></div>
 
-    <button id="giveup-btn" class="give-up-btn" onclick="giveUp()">Give Up</button>
-
-    <script src="/js/app.js"></script>
     <!-- End-Game Popup Modal -->
     <div id="endgame-modal" class="modal-overlay">
         <div class="modal-content">

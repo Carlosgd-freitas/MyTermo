@@ -1,3 +1,4 @@
+import random
 from pathlib import Path
 from config import MAX_ATTEMPTS, TARGET_WORD, TITLE
 from fastapi import APIRouter
@@ -17,6 +18,10 @@ class GuessRequest(BaseModel):
     word: str
 
 
+class HintRequest(BaseModel):
+    revealed_indices: list[int] = []
+
+
 @router.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     if FAVICON_PATH.exists():
@@ -30,6 +35,9 @@ def get_config():
         "title": TITLE,
         "length": len(TARGET_WORD),
         "max_attempts": MAX_ATTEMPTS,
+        "space_indices": [
+            i for i, char in enumerate(TARGET_WORD) if char == " "
+        ],
     }
 
 
@@ -52,6 +60,50 @@ def check_guess(request: GuessRequest):
         "target_word": TARGET_WORD,
         "victory_messages": endgame_msgs["victory"],
         "fail_messages": endgame_msgs["fail"],
+    }
+
+
+@router.post("/api/hint")
+def get_hint(request: HintRequest):
+    target_len = len(TARGET_WORD)
+    space_indices = {i for i, char in enumerate(TARGET_WORD) if char == " "}
+
+    # Filter out spaces and already revealed correct positions
+    unrevealed = [
+        i
+        for i in range(target_len)
+        if i not in space_indices and i not in request.revealed_indices
+    ]
+
+    if not unrevealed:
+        return {"error": "NO_HINTS_AVAILABLE"}
+
+    # Randomly pick one unrevealed correct letter index
+    hint_idx = random.choice(unrevealed)
+
+    # Build hint word with '-' for unrevealed non-space positions
+    hint_chars = []
+    for i, char in enumerate(TARGET_WORD):
+        if i in space_indices:
+            hint_chars.append(" ")
+        elif i == hint_idx:
+            hint_chars.append(char)
+        else:
+            hint_chars.append("-")
+
+    hint_word = "".join(hint_chars)
+    pattern, revealed_letters = evaluate_guess(hint_word, TARGET_WORD)
+    endgame_msgs = get_random_endgame_messages()
+
+    return {
+        "guess": hint_word,
+        "target_length": target_len,
+        "pattern": pattern,
+        "revealed_letters": revealed_letters,
+        "target_word": TARGET_WORD,
+        "victory_messages": endgame_msgs["victory"],
+        "fail_messages": endgame_msgs["fail"],
+        "hint_index": hint_idx,
     }
 
 

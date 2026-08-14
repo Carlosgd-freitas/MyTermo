@@ -82,11 +82,68 @@ h1 {
     text-transform: uppercase;
 }
 
+/* Grid & Action Buttons Container */
+.grid-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+/* Left-aligned, vertically centered side controls */
+.action-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: absolute;
+    right: calc(100% + 16px);
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.action-btn {
+    background-color: transparent;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.giveup-btn {
+    color: #e0a0a0;
+    border: 1px solid #e0a0a0;
+}
+
+.giveup-btn:hover:not(:disabled) {
+    background-color: #e0a0a0;
+    color: var(--bg-color);
+}
+
+.hint-btn {
+    color: var(--color-present);
+    border: 1px solid var(--color-present);
+}
+
+.hint-btn:hover:not(:disabled) {
+    background-color: var(--color-present);
+    color: var(--bg-color);
+}
+
+.action-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    border-color: #88747a;
+    color: #88747a;
+}
+
 #grid {
     display: grid;
     grid-template-rows: repeat(6, 1fr);
     gap: 6px;
-    margin-bottom: 16px;
 }
 
 .row {
@@ -135,12 +192,18 @@ h1 {
     border-color: var(--color-absent) !important;
 }
 
-/* Disabled / Unused Tile State */
 .tile.disabled-tile {
     opacity: 0.35;
     border-color: #383033;
     background-color: #4a3f43;
     cursor: not-allowed;
+}
+
+.tile.space-tile {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    pointer-events: none;
 }
 
 #message {
@@ -193,30 +256,6 @@ h1 {
 .key.large {
     flex: 1.5;
     font-size: 0.85rem;
-}
-
-.give-up-btn {
-    background-color: transparent;
-    color: #e0a0a0;
-    border: 1px solid #e0a0a0;
-    border-radius: 4px;
-    padding: 8px 16px;
-    font-size: 0.9rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.give-up-btn:hover:not(:disabled) {
-    background-color: #e0a0a0;
-    color: var(--bg-color);
-}
-
-.give-up-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-    border-color: #88747a;
-    color: #88747a;
 }
 
 /* Tile Flip Animation */
@@ -321,4 +360,18 @@ h1 {
 
 .modal-close-btn:hover {
     opacity: 0.9;
+}
+
+/* Responsive fallback for narrow screens */
+@media (max-width: 640px) {
+    .grid-container {
+        flex-direction: column;
+    }
+
+    .action-controls {
+        position: static;
+        transform: none;
+        flex-direction: row;
+        margin-bottom: 12px;
+    }
 }
