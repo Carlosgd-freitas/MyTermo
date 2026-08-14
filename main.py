@@ -1,30 +1,83 @@
 from collections import Counter
+from pathlib import Path
 import random
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 app = FastAPI()
 
+TITLE = "MYTERMO"
 TARGET_WORD = "TERMO"
 MAX_ATTEMPTS = 6
 
-PITY_MESSAGES = [
-    "Que pena! Até o dicionário precisou de um café depois dessa.",
-    "Não se preocupe, a língua portuguesa é mesmo cheia de pegadinhas!",
-    "Foi quase! (Ou talvez não tão quase assim...)",
-    "O Aurélio derramou uma lágrima, mas a gente te perdoa.",
-    "Desistir também é uma decisão estratégica! Próxima rodada?",
-]
+FAVICON_PATH = Path(__file__).parent / "favicon.ico"
+
+VICTORY_MESSAGES = {
+    "en": [
+        "Sensational! You guessed it!",
+        "Genius level! You nailed the word!",
+        "Mind blown! Spot on!",
+        "Masterpiece! You solved it like a pro!",
+    ],
+    "pt": [
+        "Sensacional! Você acertou!",
+        "Nível gênio! Você cravou a palavra!",
+        "Impressionante! Na mosca!",
+        "Obra-prima! Resolveu como um profissional!",
+    ],
+}
+
+FAIL_MESSAGES = {
+    "en": [
+        "Game over! You ran out of attempts.",
+        "Better luck next time! The word got the best of you.",
+        "So close, yet so far! Out of tries.",
+        "Tough luck! The word was victorious today.",
+    ],
+    "pt": [
+        "Fim de jogo! Suas tentativas acabaram.",
+        "Mais sorte na próxima! A palavra levou a melhor.",
+        "Tão perto, mas tão longe! Fim das tentativas.",
+        "Que azar! A palavra venceu hoje.",
+    ],
+}
+
+PITY_MESSAGES = {
+    "en": [
+        "Bummer! Even the dictionary needed a coffee break after that.",
+        "Don't worry, words can be tricky sometimes!",
+        "So close! (Or maybe not that close...)",
+        "Giving up is a strategic decision! Ready for another round?",
+    ],
+    "pt": [
+        "Que pena! Até o dicionário precisou de um café depois dessa.",
+        "Não se preocupupe, as palavras são cheias de pegadinhas!",
+        "Foi quase! (Ou talvez não tão quase assim...)",
+        "Desistir também é uma decisão estratégica! Próxima rodada?",
+    ],
+}
 
 
 class GuessRequest(BaseModel):
     word: str
 
 
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    if FAVICON_PATH.exists():
+        return FileResponse(FAVICON_PATH, media_type="image/x-icon")
+    return ("Favicon not found", 404)
+
+
 @app.get("/api/config")
 def get_config():
-    return {"length": len(TARGET_WORD), "max_attempts": MAX_ATTEMPTS}
+    return {
+        "title": TITLE,
+        "length": len(TARGET_WORD),
+        "max_attempts": MAX_ATTEMPTS,
+    }
 
 
 @app.post("/api/guess")
@@ -53,18 +106,35 @@ def check_guess(request: GuessRequest):
                 pattern[i] = "present"
                 target_counts[char] -= 1
 
+    # Pick random indices for endgame potential messages
+    v_idx = random.randint(0, len(VICTORY_MESSAGES["en"]) - 1)
+    f_idx = random.randint(0, len(FAIL_MESSAGES["en"]) - 1)
+
     return {
         "guess": guess,
         "target_length": target_len,
         "pattern": pattern,
+        "target_word": TARGET_WORD,
+        "victory_messages": {
+            "en": VICTORY_MESSAGES["en"][v_idx],
+            "pt": VICTORY_MESSAGES["pt"][v_idx],
+        },
+        "fail_messages": {
+            "en": FAIL_MESSAGES["en"][f_idx],
+            "pt": FAIL_MESSAGES["pt"][f_idx],
+        },
     }
 
 
 @app.post("/api/give-up")
 def give_up():
+    idx = random.randint(0, len(PITY_MESSAGES["en"]) - 1)
     return {
         "target_word": TARGET_WORD,
-        "message": random.choice(PITY_MESSAGES),
+        "messages": {
+            "en": PITY_MESSAGES["en"][idx],
+            "pt": PITY_MESSAGES["pt"][idx],
+        },
     }
 
 

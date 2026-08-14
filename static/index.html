@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Termo Clone</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
+    <title>Termo</title>
     <style>
         :root {
             --bg-color: #6e5c62;
@@ -34,6 +35,53 @@
             padding: 20px 0;
             box-sizing: border-box;
             user-select: none;
+            position: relative;
+        }
+
+        /* Language Toggle Buttons */
+        .lang-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            background-color: var(--tile-bg);
+            border: 1px solid var(--tile-border);
+            border-radius: 6px;
+            padding: 2px;
+            gap: 2px;
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: none;
+            color: #b0a4a8;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .lang-btn:hover {
+            color: var(--text-color);
+        }
+
+        .lang-btn.active {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .flag-icon {
+            width: 18px;
+            height: 13px;
+            border-radius: 2px;
+            object-fit: cover;
+            display: inline-block;
         }
 
         h1 {
@@ -75,7 +123,6 @@
             border-color: #88747a;
         }
 
-        /* Active cursor tile highlight */
         .tile.active-cursor {
             border-color: #ffffff !important;
             box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
@@ -105,7 +152,6 @@
             padding: 0 16px;
         }
 
-        /* Keyboard Styles */
         #keyboard {
             display: flex;
             flex-direction: column;
@@ -149,7 +195,6 @@
             font-size: 0.85rem;
         }
 
-        /* Give Up Button - Placed below grid/keyboard */
         .give-up-btn {
             background-color: transparent;
             color: #e0a0a0;
@@ -177,23 +222,60 @@
 </head>
 <body>
 
-    <h1>TERMO</h1>
+    <div class="lang-container">
+        <button id="lang-en" class="lang-btn" onclick="changeLanguage('en')">
+            <svg class="flag-icon" viewBox="0 0 60 30">
+                <clipPath id="s"><path d="M0,0 v30 h60 v-30 z"/></clipPath>
+                <clipPath id="t"><path d="M30,15 h30 v15 z M30,15 h-30 v-15 z M30,15 h-30 v15 z M30,15 h30 v-15 z"/></clipPath>
+                <g clip-path="url(#s)">
+                    <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/>
+                    <path d="M0,0 L60,30 M60,0 L0,30" stroke="#cf142b" stroke-width="2" clip-path="url(#t)"/>
+                    <path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/>
+                    <path d="M30,0 v30 M0,15 h60" stroke="#cf142b" stroke-width="6"/>
+                </g>
+            </svg> EN
+        </button>
+        <button id="lang-pt" class="lang-btn" onclick="changeLanguage('pt')">
+            <svg class="flag-icon" viewBox="0 0 700 490">
+                <rect width="700" height="490" fill="#009b3a"/>
+                <path d="M350,42 L658,245 L350,448 L42,245 Z" fill="#fedf00"/>
+                <circle cx="350" cy="245" r="126" fill="#002776"/>
+            </svg> PT
+        </button>
+    </div>
+
+    <h1 id="game-title">TERMO</h1>
 
     <div id="grid"></div>
     <div id="message"></div>
     <div id="keyboard"></div>
 
-    <button id="giveup-btn" class="give-up-btn" onclick="giveUp()">Desistir</button>
+    <button id="giveup-btn" class="give-up-btn" onclick="giveUp()">Give Up</button>
 
     <script>
+        const TRANSLATIONS = {
+            en: {
+                giveUp: "Give Up",
+                mustFill: (len) => `Fill all ${len} letters!`,
+                wordWas: "The word was:"
+            },
+            pt: {
+                giveUp: "Desistir",
+                mustFill: (len) => `Preencha todas as ${len} letras!`,
+                wordWas: "A palavra era:"
+            }
+        };
+
+        let currentLang = localStorage.getItem('termo_lang') || 'en';
+
         let wordLength = 5;
         let maxAttempts = 6;
         let currentAttempt = 0;
         
-        // Array representing current row characters
         let currentGuess = [];
         let cursorIndex = 0;
         let gameOver = false;
+        let gameEndState = null;
 
         const letterStatuses = {};
 
@@ -209,6 +291,9 @@
             const res = await fetch('/api/config');
             const config = await res.json();
             
+            document.title = config.title;
+            document.getElementById('game-title').innerText = config.title;
+
             wordLength = config.length;
             maxAttempts = config.max_attempts;
 
@@ -217,11 +302,42 @@
 
             document.documentElement.style.setProperty('--word-length', wordLength);
 
+            updateLangToggleUI();
+            updateUITexts();
             buildGrid();
             buildKeyboard();
             updateCurrentRow();
 
             document.addEventListener('keydown', handlePhysicalKeyboard);
+        }
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('termo_lang', lang);
+            updateLangToggleUI();
+            updateUITexts();
+        }
+
+        function updateLangToggleUI() {
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById(`lang-${currentLang}`);
+            if (activeBtn) activeBtn.classList.add('active');
+        }
+
+        function updateUITexts() {
+            const btn = document.getElementById('giveup-btn');
+            if (btn) btn.innerText = TRANSLATIONS[currentLang].giveUp;
+
+            if (gameEndState) {
+                const text = gameEndState.messages[currentLang];
+                const wordWasLabel = TRANSLATIONS[currentLang].wordWas;
+
+                if (gameEndState.type === 'win') {
+                    showMessage(text);
+                } else if (gameEndState.type === 'lose' || gameEndState.type === 'giveup') {
+                    showMessage(`${text} ${wordWasLabel} ${gameEndState.targetWord}`);
+                }
+            }
         }
 
         function buildGrid() {
@@ -237,7 +353,6 @@
                     tile.className = 'tile';
                     tile.id = `tile-${r}-${c}`;
 
-                    // Click tile to position cursor directly
                     tile.addEventListener('click', () => {
                         if (!gameOver && r === currentAttempt) {
                             cursorIndex = c;
@@ -286,7 +401,6 @@
             if (e.key === 'Enter') {
                 processInput('ENTER');
             } else if (e.key === 'Backspace' || e.key === 'Delete') {
-                // Fixed: Backspace and physical Delete key now both work
                 processInput('DEL');
             } else if (e.key === 'ArrowLeft') {
                 cursorIndex = Math.max(0, cursorIndex - 1);
@@ -303,7 +417,6 @@
             if (key === 'ENTER') {
                 submitGuess();
             } else if (key === 'DEL') {
-                // If current slot has a letter, clear it. Otherwise move left and clear.
                 if (currentGuess[cursorIndex] !== "") {
                     currentGuess[cursorIndex] = "";
                 } else if (cursorIndex > 0) {
@@ -312,10 +425,8 @@
                 }
                 updateCurrentRow();
             } else if (/^[A-Z]$/.test(key)) {
-                // Substitute letter at cursor
                 currentGuess[cursorIndex] = key;
 
-                // Simply move one spot to the right
                 if (cursorIndex < wordLength - 1) {
                     cursorIndex++;
                 }
@@ -323,7 +434,7 @@
                 updateCurrentRow();
             }
         }
-        
+
         function updateCurrentRow() {
             for (let c = 0; c < wordLength; c++) {
                 const tile = document.getElementById(`tile-${currentAttempt}-${c}`);
@@ -338,7 +449,6 @@
                     tile.classList.add('filled');
                 }
 
-                // Highlight active cursor tile for current attempt
                 if (c === cursorIndex && !gameOver) {
                     tile.classList.add('active-cursor');
                 }
@@ -346,9 +456,8 @@
         }
 
         async function submitGuess() {
-            // Only allow submit if all letters are filled
             if (currentGuess.some(char => char === "")) {
-                showMessage(`Preencha todas as ${wordLength} letras!`);
+                showMessage(TRANSLATIONS[currentLang].mustFill(wordLength));
                 return;
             }
 
@@ -367,7 +476,6 @@
                 return;
             }
 
-            // Remove cursor glow before coloring tiles
             const currentCursorTile = document.getElementById(`tile-${currentAttempt}-${cursorIndex}`);
             if (currentCursorTile) currentCursorTile.classList.remove('active-cursor');
 
@@ -382,8 +490,12 @@
             }
 
             if (data.pattern.every(s => s === "correct")) {
-                showMessage("Sensacional! Você acertou!");
                 gameOver = true;
+                gameEndState = {
+                    type: 'win',
+                    messages: data.victory_messages
+                };
+                updateUITexts();
                 disableGiveUpBtn();
                 return;
             }
@@ -391,11 +503,15 @@
             currentAttempt++;
 
             if (currentAttempt >= maxAttempts) {
-                showMessage("Fim de jogo! Suas tentativas acabaram.");
                 gameOver = true;
+                gameEndState = {
+                    type: 'lose',
+                    targetWord: data.target_word,
+                    messages: data.fail_messages
+                };
+                updateUITexts();
                 disableGiveUpBtn();
             } else {
-                // Reset row array & cursor for next attempt
                 currentGuess = Array(wordLength).fill("");
                 cursorIndex = 0;
                 updateCurrentRow();
@@ -408,12 +524,17 @@
             const response = await fetch('/api/give-up', { method: 'POST' });
             const data = await response.json();
 
-            showMessage(`${data.message} A palavra era: ${data.target_word}`);
             gameOver = true;
+            gameEndState = {
+                type: 'giveup',
+                targetWord: data.target_word,
+                messages: data.messages
+            };
 
             const activeTile = document.getElementById(`tile-${currentAttempt}-${cursorIndex}`);
             if (activeTile) activeTile.classList.remove('active-cursor');
 
+            updateUITexts();
             disableGiveUpBtn();
         }
 

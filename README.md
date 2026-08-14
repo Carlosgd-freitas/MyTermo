@@ -11,10 +11,14 @@ The game ends if:
 * The player runs out of tries.
 * The player gives up and presses the corresponding button, revealing the word.
 
-# Setting up
+# Srtup
 1. Install all required packages by executing `pip install -r requirements.txt`.
-2. In `main.py`, change the word that will be guessed on the `TARGET_WORD ` constant.
-3. In `main.py`, change the maximum number of attempts on the `MAX_ATTEMPTS` constant.
+
+# Customization
+1. Game title can be changed through the `TITLE` constant at `main.py`.
+2. Browser favicon can be changed through `favicon.ico`.
+3. Target word can be changed through the `TARGET_WORD` constant at `main.py`.
+4. Maximum number of attempts can be changed through the `MAX_ATTEMPTS` constant at `main.py`.
 
 # Running
 1. Execute `uvicorn main:app --reload`.
