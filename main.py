@@ -1,13 +1,21 @@
 from collections import Counter
+import random
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 app = FastAPI()
 
-# Renamed target to SECRET_WORD
-TARGET_WORD  = "TERMO"
+TARGET_WORD = "TERMO"
 MAX_ATTEMPTS = 6
+
+PITY_MESSAGES = [
+    "Que pena! Até o dicionário precisou de um café depois dessa.",
+    "Não se preocupe, a língua portuguesa é mesmo cheia de pegadinhas!",
+    "Foi quase! (Ou talvez não tão quase assim...)",
+    "O Aurélio derramou uma lágrima, mas a gente te perdoa.",
+    "Desistir também é uma decisão estratégica! Próxima rodada?",
+]
 
 
 class GuessRequest(BaseModel):
@@ -16,7 +24,6 @@ class GuessRequest(BaseModel):
 
 @app.get("/api/config")
 def get_config():
-    """Returns game rules so the frontend can build the grid dynamically."""
     return {"length": len(TARGET_WORD), "max_attempts": MAX_ATTEMPTS}
 
 
@@ -48,8 +55,16 @@ def check_guess(request: GuessRequest):
 
     return {
         "guess": guess,
-        "secret_length": target_len,
+        "target_length": target_len,
         "pattern": pattern,
+    }
+
+
+@app.post("/api/give-up")
+def give_up():
+    return {
+        "target_word": TARGET_WORD,
+        "message": random.choice(PITY_MESSAGES),
     }
 
 

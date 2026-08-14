@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyTermo</title>
+    <title>Termo Clone</title>
     <style>
         :root {
             --bg-color: #6e5c62;
@@ -11,6 +11,9 @@
             --tile-border: #4c4347;
             --text-color: #ffffff;
             
+            --key-bg: #4c4347;
+            --key-text: #ffffff;
+
             --color-correct: #3aa394; /* Green */
             --color-present: #d3ad69; /* Yellow */
             --color-absent:  #312a2c; /* Gray */
@@ -28,11 +31,14 @@
             justify-content: center;
             min-height: 100vh;
             margin: 0;
+            padding: 20px 0;
+            box-sizing: border-box;
+            user-select: none;
         }
 
         h1 {
             letter-spacing: 4px;
-            margin-bottom: 20px;
+            margin: 0 0 16px 0;
             text-transform: uppercase;
         }
 
@@ -40,7 +46,7 @@
             display: grid;
             grid-template-rows: repeat(6, 1fr);
             gap: 6px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .row {
@@ -61,62 +67,161 @@
             font-size: 1.8rem;
             font-weight: bold;
             text-transform: uppercase;
-            user-select: none;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
         .tile.filled {
             border-color: #88747a;
         }
 
-        .tile.correct {
-            background-color: var(--color-correct);
-            border-color: var(--color-correct);
+        /* Active cursor tile highlight */
+        .tile.active-cursor {
+            border-color: #ffffff !important;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
         }
 
-        .tile.present {
-            background-color: var(--color-present);
-            border-color: var(--color-present);
+        .tile.correct, .key.correct {
+            background-color: var(--color-correct) !important;
+            border-color: var(--color-correct) !important;
         }
 
-        .tile.absent {
-            background-color: var(--color-absent);
-            border-color: var(--color-absent);
+        .tile.present, .key.present {
+            background-color: var(--color-present) !important;
+            border-color: var(--color-present) !important;
+        }
+
+        .tile.absent, .key.absent {
+            background-color: var(--color-absent) !important;
+            border-color: var(--color-absent) !important;
         }
 
         #message {
-            height: 24px;
-            font-size: 1.1rem;
+            min-height: 28px;
+            font-size: 1rem;
             font-weight: 600;
+            margin-bottom: 12px;
+            text-align: center;
+            padding: 0 16px;
+        }
+
+        /* Keyboard Styles */
+        #keyboard {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 100%;
+            max-width: 500px;
+            padding: 0 8px;
+            box-sizing: border-box;
+            margin-bottom: 16px;
+        }
+
+        .keyboard-row {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .key {
+            background-color: var(--key-bg);
+            color: var(--key-text);
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: bold;
+            height: 52px;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: background-color 0.2s ease;
+        }
+
+        .key:active {
+            opacity: 0.8;
+        }
+
+        .key.large {
+            flex: 1.5;
+            font-size: 0.85rem;
+        }
+
+        /* Give Up Button - Placed below grid/keyboard */
+        .give-up-btn {
+            background-color: transparent;
+            color: #e0a0a0;
+            border: 1px solid #e0a0a0;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .give-up-btn:hover:not(:disabled) {
+            background-color: #e0a0a0;
+            color: var(--bg-color);
+        }
+
+        .give-up-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            border-color: #88747a;
+            color: #88747a;
         }
     </style>
 </head>
 <body>
 
-    <h1>MyTermo</h1>
+    <h1>TERMO</h1>
+
     <div id="grid"></div>
     <div id="message"></div>
+    <div id="keyboard"></div>
+
+    <button id="giveup-btn" class="give-up-btn" onclick="giveUp()">Desistir</button>
 
     <script>
         let wordLength = 5;
         let maxAttempts = 6;
         let currentAttempt = 0;
-        let currentGuess = "";
+        
+        // Array representing current row characters
+        let currentGuess = [];
+        let cursorIndex = 0;
         let gameOver = false;
 
+        const letterStatuses = {};
+
+        const KEYBOARD_LAYOUT = [
+            ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
+            ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
+            ["ENTER", "Z", "X", "C", "V", "B", "N", "M", "DEL"]
+        ];
+
+        const STATUS_PRIORITY = { "correct": 3, "present": 2, "absent": 1 };
+
         async function initGame() {
-            // Fetch length and max attempts from backend
             const res = await fetch('/api/config');
             const config = await res.json();
             
             wordLength = config.length;
             maxAttempts = config.max_attempts;
 
-            // Set CSS variable for dynamic column count
+            currentGuess = Array(wordLength).fill("");
+            cursorIndex = 0;
+
             document.documentElement.style.setProperty('--word-length', wordLength);
 
             buildGrid();
-            document.addEventListener('keydown', handleKeyPress);
+            buildKeyboard();
+            updateCurrentRow();
+
+            document.addEventListener('keydown', handlePhysicalKeyboard);
         }
 
         function buildGrid() {
@@ -126,58 +231,133 @@
             for (let r = 0; r < maxAttempts; r++) {
                 const row = document.createElement('div');
                 row.className = 'row';
-                row.id = `row-${r}`;
 
                 for (let c = 0; c < wordLength; c++) {
                     const tile = document.createElement('div');
                     tile.className = 'tile';
                     tile.id = `tile-${r}-${c}`;
+
+                    // Click tile to position cursor directly
+                    tile.addEventListener('click', () => {
+                        if (!gameOver && r === currentAttempt) {
+                            cursorIndex = c;
+                            updateCurrentRow();
+                        }
+                    });
+
                     row.appendChild(tile);
                 }
                 grid.appendChild(row);
             }
         }
 
-        function updateCurrentRow() {
-            for (let c = 0; c < wordLength; c++) {
-                const tile = document.getElementById(`tile-${currentAttempt}-${c}`);
-                const letter = currentGuess[c] || "";
-                
-                tile.innerText = letter;
-                if (letter) {
-                    tile.classList.add('filled');
-                } else {
-                    tile.classList.remove('filled');
-                }
-            }
+        function buildKeyboard() {
+            const keyboard = document.getElementById('keyboard');
+            keyboard.innerHTML = '';
+
+            KEYBOARD_LAYOUT.forEach(rowKeys => {
+                const row = document.createElement('div');
+                row.className = 'keyboard-row';
+
+                rowKeys.forEach(keyText => {
+                    const button = document.createElement('button');
+                    button.className = 'key';
+                    button.innerText = keyText;
+                    button.id = `key-${keyText}`;
+
+                    if (keyText === 'ENTER' || keyText === 'DEL') {
+                        button.classList.add('large');
+                    }
+
+                    button.addEventListener('click', () => {
+                        if (!gameOver) processInput(keyText);
+                    });
+
+                    row.appendChild(button);
+                });
+
+                keyboard.appendChild(row);
+            });
         }
 
-        function handleKeyPress(e) {
+        function handlePhysicalKeyboard(e) {
             if (gameOver) return;
 
             if (e.key === 'Enter') {
-                submitGuess();
-            } else if (e.key === 'Backspace') {
-                currentGuess = currentGuess.slice(0, -1);
+                processInput('ENTER');
+            } else if (e.key === 'Backspace' || e.key === 'Delete') {
+                // Fixed: Backspace and physical Delete key now both work
+                processInput('DEL');
+            } else if (e.key === 'ArrowLeft') {
+                cursorIndex = Math.max(0, cursorIndex - 1);
+                updateCurrentRow();
+            } else if (e.key === 'ArrowRight') {
+                cursorIndex = Math.min(wordLength - 1, cursorIndex + 1);
                 updateCurrentRow();
             } else if (/^[a-zA-Z]$/.test(e.key)) {
-                if (currentGuess.length < wordLength) {
-                    currentGuess += e.key.toUpperCase();
-                    updateCurrentRow();
+                processInput(e.key.toUpperCase());
+            }
+        }
+
+        function processInput(key) {
+            if (key === 'ENTER') {
+                submitGuess();
+            } else if (key === 'DEL') {
+                // If current slot has a letter, clear it. Otherwise move left and clear.
+                if (currentGuess[cursorIndex] !== "") {
+                    currentGuess[cursorIndex] = "";
+                } else if (cursorIndex > 0) {
+                    cursorIndex--;
+                    currentGuess[cursorIndex] = "";
+                }
+                updateCurrentRow();
+            } else if (/^[A-Z]$/.test(key)) {
+                // Substitute letter at cursor
+                currentGuess[cursorIndex] = key;
+
+                // Simply move one spot to the right
+                if (cursorIndex < wordLength - 1) {
+                    cursorIndex++;
+                }
+
+                updateCurrentRow();
+            }
+        }
+        
+        function updateCurrentRow() {
+            for (let c = 0; c < wordLength; c++) {
+                const tile = document.getElementById(`tile-${currentAttempt}-${c}`);
+                if (!tile) continue;
+
+                const letter = currentGuess[c] || "";
+                tile.innerText = letter;
+
+                tile.classList.remove('active-cursor', 'filled');
+
+                if (letter) {
+                    tile.classList.add('filled');
+                }
+
+                // Highlight active cursor tile for current attempt
+                if (c === cursorIndex && !gameOver) {
+                    tile.classList.add('active-cursor');
                 }
             }
         }
 
         async function submitGuess() {
-            if (currentGuess.length !== wordLength) {
-                showMessage(`Word must be ${wordLength} letters long`);
+            // Only allow submit if all letters are filled
+            if (currentGuess.some(char => char === "")) {
+                showMessage(`Preencha todas as ${wordLength} letras!`);
                 return;
             }
+
+            const wordToSubmit = currentGuess.join("");
 
             const response = await fetch('/api/guess', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ word: currentGuess })
+                body: JSON.stringify({ word: wordToSubmit })
             });
 
             const data = await response.json();
@@ -187,33 +367,81 @@
                 return;
             }
 
-            // Color the tiles based on backend pattern response
+            // Remove cursor glow before coloring tiles
+            const currentCursorTile = document.getElementById(`tile-${currentAttempt}-${cursorIndex}`);
+            if (currentCursorTile) currentCursorTile.classList.remove('active-cursor');
+
             for (let i = 0; i < wordLength; i++) {
+                const letter = wordToSubmit[i];
+                const status = data.pattern[i];
+
                 const tile = document.getElementById(`tile-${currentAttempt}-${i}`);
-                tile.classList.add(data.pattern[i]);
+                tile.classList.add(status);
+
+                updateKeyStatus(letter, status);
             }
 
-            // Win condition
-            if (data.pattern.every(status => status === "correct")) {
-                showMessage("Sensacional! You guessed it!");
+            if (data.pattern.every(s => s === "correct")) {
+                showMessage("Sensacional! Você acertou!");
                 gameOver = true;
+                disableGiveUpBtn();
                 return;
             }
 
             currentAttempt++;
-            currentGuess = "";
 
-            // Lose condition
             if (currentAttempt >= maxAttempts) {
-                showMessage(`Game over! The word was revealed.`);
+                showMessage("Fim de jogo! Suas tentativas acabaram.");
                 gameOver = true;
+                disableGiveUpBtn();
+            } else {
+                // Reset row array & cursor for next attempt
+                currentGuess = Array(wordLength).fill("");
+                cursorIndex = 0;
+                updateCurrentRow();
+            }
+        }
+
+        async function giveUp() {
+            if (gameOver) return;
+
+            const response = await fetch('/api/give-up', { method: 'POST' });
+            const data = await response.json();
+
+            showMessage(`${data.message} A palavra era: ${data.target_word}`);
+            gameOver = true;
+
+            const activeTile = document.getElementById(`tile-${currentAttempt}-${cursorIndex}`);
+            if (activeTile) activeTile.classList.remove('active-cursor');
+
+            disableGiveUpBtn();
+        }
+
+        function disableGiveUpBtn() {
+            const btn = document.getElementById('giveup-btn');
+            if (btn) btn.disabled = true;
+        }
+
+        function updateKeyStatus(letter, newStatus) {
+            const currentStatus = letterStatuses[letter];
+
+            if (!currentStatus || STATUS_PRIORITY[newStatus] > STATUS_PRIORITY[currentStatus]) {
+                letterStatuses[letter] = newStatus;
+                
+                const keyBtn = document.getElementById(`key-${letter}`);
+                if (keyBtn) {
+                    keyBtn.classList.remove('correct', 'present', 'absent');
+                    keyBtn.classList.add(newStatus);
+                }
             }
         }
 
         function showMessage(text) {
             const msgEl = document.getElementById('message');
             msgEl.innerText = text;
-            setTimeout(() => { if (!gameOver) msgEl.innerText = ''; }, 3000);
+            if (!gameOver) {
+                setTimeout(() => { if (!gameOver) msgEl.innerText = ''; }, 3000);
+            }
         }
 
         initGame();
