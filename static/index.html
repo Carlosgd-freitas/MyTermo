@@ -2,29 +2,221 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Termo V0.1</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTermo</title>
+    <style>
+        :root {
+            --bg-color: #6e5c62;
+            --tile-bg: #615458;
+            --tile-border: #4c4347;
+            --text-color: #ffffff;
+            
+            --color-correct: #3aa394; /* Green */
+            --color-present: #d3ad69; /* Yellow */
+            --color-absent:  #312a2c; /* Gray */
+
+            --word-length: 5;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        #grid {
+            display: grid;
+            grid-template-rows: repeat(6, 1fr);
+            gap: 6px;
+            margin-bottom: 20px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(var(--word-length), 1fr);
+            gap: 6px;
+        }
+
+        .tile {
+            width: 52px;
+            height: 52px;
+            border: 2px solid var(--tile-border);
+            background-color: var(--tile-bg);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            user-select: none;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .tile.filled {
+            border-color: #88747a;
+        }
+
+        .tile.correct {
+            background-color: var(--color-correct);
+            border-color: var(--color-correct);
+        }
+
+        .tile.present {
+            background-color: var(--color-present);
+            border-color: var(--color-present);
+        }
+
+        .tile.absent {
+            background-color: var(--color-absent);
+            border-color: var(--color-absent);
+        }
+
+        #message {
+            height: 24px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+    </style>
 </head>
 <body>
-    <h1>Termo Clone</h1>
-    <input type="text" id="guessInput" maxlength="5" placeholder="Enter 5 letters">
-    <button onclick="submitGuess()">Guess</button>
-    
-    <pre id="output"></pre>
+
+    <h1>MyTermo</h1>
+    <div id="grid"></div>
+    <div id="message"></div>
 
     <script>
-        async function submitGuess() {
-            const guess = document.getElementById('guessInput').value;
-            const output = document.getElementById('output');
+        let wordLength = 5;
+        let maxAttempts = 6;
+        let currentAttempt = 0;
+        let currentGuess = "";
+        let gameOver = false;
+
+        async function initGame() {
+            // Fetch length and max attempts from backend
+            const res = await fetch('/api/config');
+            const config = await res.json();
             
+            wordLength = config.length;
+            maxAttempts = config.max_attempts;
+
+            // Set CSS variable for dynamic column count
+            document.documentElement.style.setProperty('--word-length', wordLength);
+
+            buildGrid();
+            document.addEventListener('keydown', handleKeyPress);
+        }
+
+        function buildGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+
+            for (let r = 0; r < maxAttempts; r++) {
+                const row = document.createElement('div');
+                row.className = 'row';
+                row.id = `row-${r}`;
+
+                for (let c = 0; c < wordLength; c++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'tile';
+                    tile.id = `tile-${r}-${c}`;
+                    row.appendChild(tile);
+                }
+                grid.appendChild(row);
+            }
+        }
+
+        function updateCurrentRow() {
+            for (let c = 0; c < wordLength; c++) {
+                const tile = document.getElementById(`tile-${currentAttempt}-${c}`);
+                const letter = currentGuess[c] || "";
+                
+                tile.innerText = letter;
+                if (letter) {
+                    tile.classList.add('filled');
+                } else {
+                    tile.classList.remove('filled');
+                }
+            }
+        }
+
+        function handleKeyPress(e) {
+            if (gameOver) return;
+
+            if (e.key === 'Enter') {
+                submitGuess();
+            } else if (e.key === 'Backspace') {
+                currentGuess = currentGuess.slice(0, -1);
+                updateCurrentRow();
+            } else if (/^[a-zA-Z]$/.test(e.key)) {
+                if (currentGuess.length < wordLength) {
+                    currentGuess += e.key.toUpperCase();
+                    updateCurrentRow();
+                }
+            }
+        }
+
+        async function submitGuess() {
+            if (currentGuess.length !== wordLength) {
+                showMessage(`Word must be ${wordLength} letters long`);
+                return;
+            }
+
             const response = await fetch('/api/guess', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ word: guess })
+                body: JSON.stringify({ word: currentGuess })
             });
-            
+
             const data = await response.json();
-            output.innerText = JSON.stringify(data, null, 2); 
+
+            if (data.error) {
+                showMessage(data.error);
+                return;
+            }
+
+            // Color the tiles based on backend pattern response
+            for (let i = 0; i < wordLength; i++) {
+                const tile = document.getElementById(`tile-${currentAttempt}-${i}`);
+                tile.classList.add(data.pattern[i]);
+            }
+
+            // Win condition
+            if (data.pattern.every(status => status === "correct")) {
+                showMessage("Sensacional! You guessed it!");
+                gameOver = true;
+                return;
+            }
+
+            currentAttempt++;
+            currentGuess = "";
+
+            // Lose condition
+            if (currentAttempt >= maxAttempts) {
+                showMessage(`Game over! The word was revealed.`);
+                gameOver = true;
+            }
         }
+
+        function showMessage(text) {
+            const msgEl = document.getElementById('message');
+            msgEl.innerText = text;
+            setTimeout(() => { if (!gameOver) msgEl.innerText = ''; }, 3000);
+        }
+
+        initGame();
     </script>
 </body>
 </html>
