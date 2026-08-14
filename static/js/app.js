@@ -2,12 +2,24 @@ const TRANSLATIONS = {
     en: {
         giveUp: "Give Up",
         mustFill: (len) => `Fill all ${len} letters!`,
-        wordWas: "The word was:"
+        wordWas: "The word was:",
+        modalTitles: {
+            win: "Victory!",
+            lose: "Game Over",
+            giveup: "Round Ended"
+        },
+        ok: "OK"
     },
     pt: {
         giveUp: "Desistir",
         mustFill: (len) => `Preencha todas as ${len} letras!`,
-        wordWas: "A palavra era:"
+        wordWas: "A palavra era:",
+        modalTitles: {
+            win: "Vitória!",
+            lose: "Fim de Jogo",
+            giveup: "Fim da Rodada"
+        },
+        ok: "OK"
     }
 };
 
@@ -21,6 +33,8 @@ let currentGuess = [];
 let cursorIndex = 0;
 let gameOver = false;
 let gameEndState = null;
+
+let isAnimating = false; // Prevents typing while tiles are flipping
 
 const letterStatuses = {};
 
@@ -74,15 +88,32 @@ function updateUITexts() {
     if (btn) btn.innerText = TRANSLATIONS[currentLang].giveUp;
 
     if (gameEndState) {
+        const t = TRANSLATIONS[currentLang];
         const text = gameEndState.messages[currentLang];
-        const wordWasLabel = TRANSLATIONS[currentLang].wordWas;
 
-        if (gameEndState.type === 'win') {
-            showMessage(text);
-        } else if (gameEndState.type === 'lose' || gameEndState.type === 'giveup') {
-            showMessage(`${text} ${wordWasLabel} ${gameEndState.targetWord}`);
+        document.getElementById('modal-title').innerText = t.modalTitles[gameEndState.type] || "";
+        document.getElementById('modal-message').innerText = text;
+
+        const wordContainer = document.getElementById('modal-word-container');
+        if (gameEndState.type === 'lose' || gameEndState.type === 'giveup') {
+            wordContainer.style.display = 'block';
+            document.getElementById('modal-word-label').innerText = t.wordWas;
+            document.getElementById('modal-word').innerText = gameEndState.targetWord;
+        } else {
+            wordContainer.style.display = 'none';
         }
+
+        document.querySelector('.modal-close-btn').innerText = t.ok;
+        openModal();
     }
+}
+
+function openModal() {
+    document.getElementById('endgame-modal').classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('endgame-modal').classList.remove('active');
 }
 
 function buildGrid() {
@@ -141,7 +172,7 @@ function buildKeyboard() {
 }
 
 function handlePhysicalKeyboard(e) {
-    if (gameOver) return;
+    if (gameOver || isAnimating) return;
 
     if (e.key === 'Enter') {
         processInput('ENTER');
@@ -153,12 +184,21 @@ function handlePhysicalKeyboard(e) {
     } else if (e.key === 'ArrowRight') {
         cursorIndex = Math.min(wordLength - 1, cursorIndex + 1);
         updateCurrentRow();
-    } else if (/^[a-zA-Z]$/.test(e.key)) {
-        processInput(e.key.toUpperCase());
+    } else {
+        // Strip accents (e.g. 'ç' -> 'c', 'á' -> 'a', 'ñ' -> 'n') and convert to uppercase
+        const normalizedKey = e.key
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toUpperCase();
+
+        if (/^[A-Z]$/.test(normalizedKey)) {
+            processInput(normalizedKey);
+        }
     }
 }
 
 function processInput(key) {
+    if (gameOver || isAnimating) return;
     if (key === 'ENTER') {
         submitGuess();
     } else if (key === 'DEL') {
@@ -221,46 +261,71 @@ async function submitGuess() {
         return;
     }
 
+    // Lock keyboard while animation plays
+    isAnimating = true;
+
     const currentCursorTile = document.getElementById(`tile-${currentAttempt}-${cursorIndex}`);
     if (currentCursorTile) currentCursorTile.classList.remove('active-cursor');
+
+    const FLIP_DURATION = 500; // Total flip time in ms
+    const STAGGER_DELAY = 250; // Delay between each tile's start
 
     for (let i = 0; i < wordLength; i++) {
         const letter = wordToSubmit[i];
         const status = data.pattern[i];
-
+        const displayLetter = data.revealed_letters ? data.revealed_letters[i] : letter;
         const tile = document.getElementById(`tile-${currentAttempt}-${i}`);
-        tile.classList.add(status);
 
-        updateKeyStatus(letter, status);
+        // Trigger flip animation with staggered delay
+        setTimeout(() => {
+            tile.classList.add('flip');
+
+            // Swap letter and background color at the halfway point (when tile is edge-on)
+            setTimeout(() => {
+                tile.innerText = displayLetter;
+                tile.classList.add(status);
+                updateKeyStatus(letter, status);
+            }, FLIP_DURATION / 2);
+
+        }, i * STAGGER_DELAY);
     }
 
-    if (data.pattern.every(s => s === "correct")) {
-        gameOver = true;
-        gameEndState = {
-            type: 'win',
-            messages: data.victory_messages
-        };
-        updateUITexts();
-        disableGiveUpBtn();
-        return;
-    }
+    // Process win/loss state after all flips finish
+    const totalAnimationTime = (wordLength - 1) * STAGGER_DELAY + FLIP_DURATION;
 
-    currentAttempt++;
+    setTimeout(() => {
+        isAnimating = false;
 
-    if (currentAttempt >= maxAttempts) {
-        gameOver = true;
-        gameEndState = {
-            type: 'lose',
-            targetWord: data.target_word,
-            messages: data.fail_messages
-        };
-        updateUITexts();
-        disableGiveUpBtn();
-    } else {
-        currentGuess = Array(wordLength).fill("");
-        cursorIndex = 0;
-        updateCurrentRow();
-    }
+        if (data.pattern.every(s => s === "correct")) {
+            gameOver = true;
+            gameEndState = {
+                type: 'win',
+                messages: data.victory_messages
+            };
+            grayOutRemainingTiles();
+            updateUITexts();
+            disableGiveUpBtn();
+            return;
+        }
+
+        currentAttempt++;
+
+        if (currentAttempt >= maxAttempts) {
+            gameOver = true;
+            gameEndState = {
+                type: 'lose',
+                targetWord: data.target_word,
+                messages: data.fail_messages
+            };
+            grayOutRemainingTiles();
+            updateUITexts();
+            disableGiveUpBtn();
+        } else {
+            currentGuess = Array(wordLength).fill("");
+            cursorIndex = 0;
+            updateCurrentRow();
+        }
+    }, totalAnimationTime);
 }
 
 async function giveUp() {
@@ -279,6 +344,7 @@ async function giveUp() {
     const activeTile = document.getElementById(`tile-${currentAttempt}-${cursorIndex}`);
     if (activeTile) activeTile.classList.remove('active-cursor');
 
+    grayOutRemainingTiles();
     updateUITexts();
     disableGiveUpBtn();
 }
@@ -307,6 +373,27 @@ function showMessage(text) {
     msgEl.innerText = text;
     if (!gameOver) {
         setTimeout(() => { if (!gameOver) msgEl.innerText = ''; }, 3000);
+    }
+}
+
+function grayOutRemainingTiles() {
+    for (let r = 0; r < maxAttempts; r++) {
+        for (let c = 0; c < wordLength; c++) {
+            const tile = document.getElementById(`tile-${r}-${c}`);
+            if (!tile) continue;
+
+            // Remove active cursor focus
+            tile.classList.remove('active-cursor');
+
+            // If the tile hasn't been evaluated (doesn't have correct/present/absent), gray it out
+            const isEvaluated = tile.classList.contains('correct') || 
+                                tile.classList.contains('present') || 
+                                tile.classList.contains('absent');
+
+            if (!isEvaluated) {
+                tile.classList.add('disabled-tile');
+            }
+        }
     }
 }
 

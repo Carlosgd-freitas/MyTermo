@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
     <link rel="stylesheet" href="/css/styles.css">
-    <title>Termo</title>
+    <title>MyTermo</title>
 </head>
 <body>
 
@@ -38,6 +38,20 @@
     <div id="keyboard"></div>
 
     <button id="giveup-btn" class="give-up-btn" onclick="giveUp()">Give Up</button>
+
+    <script src="/js/app.js"></script>
+    <!-- End-Game Popup Modal -->
+    <div id="endgame-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div id="modal-title" class="modal-title"></div>
+            <div id="modal-message" class="modal-message"></div>
+            <div id="modal-word-container" class="modal-word-container" style="display: none;">
+                <div id="modal-word-label" class="modal-word-label"></div>
+                <div id="modal-word" class="modal-word"></div>
+            </div>
+            <button class="modal-close-btn" onclick="closeModal()">OK</button>
+        </div>
+    </div>
 
     <script src="/js/app.js"></script>
 </body>

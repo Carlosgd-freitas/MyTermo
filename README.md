@@ -11,7 +11,7 @@ The game ends if:
 * The player runs out of tries.
 * The player gives up and presses the corresponding button, revealing the word.
 
-# Srtup
+# Setup
 1. Install all required packages by executing `pip install -r requirements.txt`.
 
 # Customization

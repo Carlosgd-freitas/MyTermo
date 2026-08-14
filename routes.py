@@ -41,13 +41,14 @@ def check_guess(request: GuessRequest):
     if len(guess) != target_len:
         return {"error": f"Word must be {target_len} letters long."}
 
-    pattern = evaluate_guess(guess, TARGET_WORD)
+    pattern, revealed_letters = evaluate_guess(guess, TARGET_WORD)
     endgame_msgs = get_random_endgame_messages()
 
     return {
         "guess": guess,
         "target_length": target_len,
         "pattern": pattern,
+        "revealed_letters": revealed_letters,
         "target_word": TARGET_WORD,
         "victory_messages": endgame_msgs["victory"],
         "fail_messages": endgame_msgs["fail"],
