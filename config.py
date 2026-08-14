@@ -1,0 +1,4 @@
+# Game Customizations
+TITLE = "MYTERMO"
+TARGET_WORD = "TERMO"
+MAX_ATTEMPTS = 6

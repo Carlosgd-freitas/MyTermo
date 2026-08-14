@@ -1,0 +1,212 @@
+:root {
+    /* Easily customizable background & element colors */
+    --bg-color: #6e5c62;
+    --tile-bg: #615458;
+    --tile-border: #4c4347;
+    --text-color: #ffffff;
+    
+    --key-bg: #4c4347;
+    --key-text: #ffffff;
+
+    --color-correct: #3aa394; /* Green */
+    --color-present: #d3ad69; /* Yellow */
+    --color-absent:  #312a2c; /* Gray */
+
+    --word-length: 5;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px 0;
+    box-sizing: border-box;
+    user-select: none;
+    position: relative;
+}
+
+.lang-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    background-color: var(--tile-bg);
+    border: 1px solid var(--tile-border);
+    border-radius: 6px;
+    padding: 2px;
+    gap: 2px;
+}
+
+.lang-btn {
+    background: transparent;
+    border: none;
+    color: #b0a4a8;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.lang-btn:hover {
+    color: var(--text-color);
+}
+
+.lang-btn.active {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.flag-icon {
+    width: 18px;
+    height: 13px;
+    border-radius: 2px;
+    object-fit: cover;
+    display: inline-block;
+}
+
+h1 {
+    letter-spacing: 4px;
+    margin: 0 0 16px 0;
+    text-transform: uppercase;
+}
+
+#grid {
+    display: grid;
+    grid-template-rows: repeat(6, 1fr);
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: repeat(var(--word-length), 1fr);
+    gap: 6px;
+}
+
+.tile {
+    width: 52px;
+    height: 52px;
+    border: 2px solid var(--tile-border);
+    background-color: var(--tile-bg);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tile.filled {
+    border-color: #88747a;
+}
+
+.tile.active-cursor {
+    border-color: #ffffff !important;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+}
+
+.tile.correct, .key.correct {
+    background-color: var(--color-correct) !important;
+    border-color: var(--color-correct) !important;
+}
+
+.tile.present, .key.present {
+    background-color: var(--color-present) !important;
+    border-color: var(--color-present) !important;
+}
+
+.tile.absent, .key.absent {
+    background-color: var(--color-absent) !important;
+    border-color: var(--color-absent) !important;
+}
+
+#message {
+    min-height: 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    text-align: center;
+    padding: 0 16px;
+}
+
+#keyboard {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    max-width: 500px;
+    padding: 0 8px;
+    box-sizing: border-box;
+    margin-bottom: 16px;
+}
+
+.keyboard-row {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+}
+
+.key {
+    background-color: var(--key-bg);
+    color: var(--key-text);
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: bold;
+    height: 52px;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background-color 0.2s ease;
+}
+
+.key:active {
+    opacity: 0.8;
+}
+
+.key.large {
+    flex: 1.5;
+    font-size: 0.85rem;
+}
+
+.give-up-btn {
+    background-color: transparent;
+    color: #e0a0a0;
+    border: 1px solid #e0a0a0;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.give-up-btn:hover:not(:disabled) {
+    background-color: #e0a0a0;
+    color: var(--bg-color);
+}
+
+.give-up-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    border-color: #88747a;
+    color: #88747a;
+}
