@@ -1,17 +1,17 @@
 {
-    "id": "classic",
+    "id": "sunset",
     "name": {
-        "en": "Classic",
-        "pt": "Clássico"
+        "en": "Sunset",
+        "pt": "Pôr do Sol"
     },
     "colors": {
         "font-family": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        "bg-color": "#6e5c62",
-        "text-color": "#ffffff",
-        "tile-bg": "#615458",
-        "tile-border": "#4c4347",
-        "tile-text": "#ffffff",
-        "key-bg": "#4c4347",
+        "bg-color": "#e29578",
+        "text-color": "#2b1810",
+        "tile-bg": "#f7d6c8",
+        "tile-border": "#b86b53",
+        "tile-text": "#2b1810",
+        "key-bg": "#b86b53",
         "key-text": "#ffffff",
         "btn-hint-bg": "#d3ad69",
         "btn-hint-text": "#ffffff",
@@ -19,10 +19,10 @@
         "btn-giveup-text": "#ffffff",
         "correct-bg": "#3aa394",
         "present-bg": "#d3ad69",
-        "absent-bg": "#312a2c",
-        "modal-bg": "#615458",
-        "modal-border": "#4c4347",
-        "dropdown-bg": "#4c4347",
+        "absent-bg": "#7a5c53",
+        "modal-bg": "#f7d6c8",
+        "modal-border": "#b86b53",
+        "dropdown-bg": "#b86b53",
         "dropdown-text": "#ffffff"
     }
 }

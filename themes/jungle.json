@@ -1,0 +1,28 @@
+{
+    "id": "jungle",
+    "name": {
+        "en": "Jungle",
+        "pt": "Selva"
+    },
+    "colors": {
+        "font-family": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+        "bg-color": "#0b1d13",
+        "text-color": "#ecf3ee",
+        "tile-bg": "#1b4332",
+        "tile-border": "#2d6a4f",
+        "tile-text": "#ffffff",
+        "key-bg": "#2d6a4f",
+        "key-text": "#ecf3ee",
+        "btn-hint-bg": "#d3ad69",
+        "btn-hint-text": "#f0f0f0",
+        "btn-giveup-bg": "#8b3a3a",
+        "btn-giveup-text": "#f0f0f0",
+        "correct-bg": "#3aa394",
+        "present-bg": "#d3ad69",
+        "absent-bg": "#122118",
+        "modal-bg": "#1b4332",
+        "modal-border": "#2d6a4f",
+        "dropdown-bg": "#1b4332",
+        "dropdown-text": "#ffffff"
+    }
+}

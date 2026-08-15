@@ -1,0 +1,28 @@
+{
+    "id": "night",
+    "name": {
+        "en": "Night",
+        "pt": "Noite"
+    },
+    "colors": {
+        "font-family": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+        "bg-color": "#0b132b",
+        "text-color": "#f8fafc",
+        "tile-bg": "#1c2541",
+        "tile-border": "#3a506b",
+        "tile-text": "#ffffff",
+        "key-bg": "#2a344d",
+        "key-text": "#f8fafc",
+        "btn-hint-bg": "#d3ad69",
+        "btn-hint-text": "#f0f0f0",
+        "btn-giveup-bg": "#8b3a3a",
+        "btn-giveup-text": "#f0f0f0",
+        "correct-bg": "#28756a",
+        "present-bg": "#9e8047",
+        "absent-bg": "#1c1819",
+        "modal-bg": "#1c2541",
+        "modal-border": "#3a506b",
+        "dropdown-bg": "#1c2541",
+        "dropdown-text": "#ffffff"
+    }
+}

@@ -135,10 +135,10 @@ body {
 .tile {
     width: 52px;
     height: 52px;
-    border: 2px solid var(--tile-border, #4c4347);
-    background-color: var(--tile-bg, #615458);
+    border: 2px solid var(--tile-border);
+    background-color: var(--tile-bg);
     border-radius: 4px;
-    color: var(--tile-text, #ffffff);
+    color: var(--tile-text);
     font-size: 1.8rem;
     font-weight: bold;
     display: flex;
@@ -168,11 +168,11 @@ body {
 }
 
 .tile.filled {
-    border-color: #88747a;
+    border-color: var(--tile-text);
 }
 
 .tile.active-cursor {
-    border-color: #ffffff !important;
+    border-color: var(--tile-text);
     box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
 }
 
@@ -236,26 +236,30 @@ body {
 
 #giveup-btn,
 .giveup-btn {
-    color: #e0a0a0;
-    border: 1px solid #e0a0a0;
+    color: var(--btn-giveup-text, var(--key-text));
+    background-color: var(--btn-giveup-bg, var(--key-bg));
+    border: 1px solid var(--tile-border);
 }
 
 #giveup-btn:hover:not(:disabled),
 .giveup-btn:hover:not(:disabled) {
-    background-color: #e0a0a0;
-    color: var(--bg-color);
+    color: var(--btn-giveup-bg, var(--key-bg));
+    background-color: var(--btn-giveup-text, var(--key-text));
+    border: 1px solid var(--tile-border);
 }
 
 #hint-btn,
 .hint-btn {
-    color: var(--present-bg, #d3ad69);
-    border: 1px solid var(--present-bg, #d3ad69);
+    color: var(--btn-hint-text, var(--key-text));
+    background-color: var(--btn-hint-bg, var(--key-bg));
+    border: 1px solid var(--tile-border);
 }
 
 #hint-btn:hover:not(:disabled),
 .hint-btn:hover:not(:disabled) {
-    background-color: var(--present-bg, #d3ad69);
-    color: var(--bg-color);
+    color: var(--btn-hint-bg, var(--key-bg));
+    background-color: var(--btn-hint-text, var(--key-text));
+    border: 1px solid var(--tile-border);
 }
 
 .actions button:disabled,
@@ -426,8 +430,12 @@ body {
 
 /* Theme Modal & Cards */
 .theme-modal-content {
+    max-height: 80vh;
     max-width: 460px;
     width: 90%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; 
     position: relative;
 }
 
@@ -444,9 +452,21 @@ body {
 
 .theme-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
     margin-top: 20px;
+    overflow-y: auto;
+    max-height: calc(80vh - 60px);
+    padding-right: 4px;
+}
+
+#theme-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+#theme-grid::-webkit-scrollbar-thumb {
+    background-color: var(--tile-border);
+    border-radius: 4px;
 }
 
 .theme-card {

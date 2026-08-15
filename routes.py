@@ -16,6 +16,19 @@ router = APIRouter()
 FAVICON_PATH = Path(__file__).parent / "favicon.ico"
 THEMES_DIR = Path(__file__).parent / "themes"
 
+PREFERRED_THEME_ORDER = [
+    "classic",
+    "dark",
+    "day",
+    "night",
+    "sunset",
+    "embers",
+    "forest",
+    "jungle",
+    "cherry",
+    "royal",
+]
+
 
 def load_dynamic_themes():
     """Scan the themes directory and parse metadata and colors from JSON theme files."""
@@ -23,13 +36,20 @@ def load_dynamic_themes():
     themes = []
 
     if themes_path.exists():
-        for file_path in sorted(themes_path.glob("*.json")):
+        for file_path in themes_path.glob("*.json"):
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
                     themes.append(json.load(f))
             except Exception:
                 continue
 
+    def theme_sort_key(theme):
+        theme_id = theme.get("id", "")
+        if theme_id in PREFERRED_THEME_ORDER:
+            return (0, PREFERRED_THEME_ORDER.index(theme_id))
+        return (1, theme_id)
+
+    themes.sort(key=theme_sort_key)
     return themes
 
 

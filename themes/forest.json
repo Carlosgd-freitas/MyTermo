@@ -1,17 +1,17 @@
 {
-    "id": "classic",
+    "id": "forest",
     "name": {
-        "en": "Classic",
-        "pt": "Clássico"
+        "en": "Forest",
+        "pt": "Floresta"
     },
     "colors": {
         "font-family": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        "bg-color": "#6e5c62",
-        "text-color": "#ffffff",
-        "tile-bg": "#615458",
-        "tile-border": "#4c4347",
-        "tile-text": "#ffffff",
-        "key-bg": "#4c4347",
+        "bg-color": "#84a98c",
+        "text-color": "#132a13",
+        "tile-bg": "#cad2c5",
+        "tile-border": "#52796f",
+        "tile-text": "#132a13",
+        "key-bg": "#52796f",
         "key-text": "#ffffff",
         "btn-hint-bg": "#d3ad69",
         "btn-hint-text": "#ffffff",
@@ -19,10 +19,10 @@
         "btn-giveup-text": "#ffffff",
         "correct-bg": "#3aa394",
         "present-bg": "#d3ad69",
-        "absent-bg": "#312a2c",
-        "modal-bg": "#615458",
-        "modal-border": "#4c4347",
-        "dropdown-bg": "#4c4347",
+        "absent-bg": "#525b56",
+        "modal-bg": "#cad2c5",
+        "modal-border": "#52796f",
+        "dropdown-bg": "#52796f",
         "dropdown-text": "#ffffff"
     }
 }

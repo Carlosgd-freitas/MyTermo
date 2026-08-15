@@ -1,17 +1,17 @@
 {
-    "id": "classic",
+    "id": "day",
     "name": {
-        "en": "Classic",
-        "pt": "Clássico"
+        "en": "Day",
+        "pt": "Dia"
     },
     "colors": {
         "font-family": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        "bg-color": "#6e5c62",
-        "text-color": "#ffffff",
-        "tile-bg": "#615458",
-        "tile-border": "#4c4347",
-        "tile-text": "#ffffff",
-        "key-bg": "#4c4347",
+        "bg-color": "#7eb6d9",
+        "text-color": "#0d2538",
+        "tile-bg": "#aed5f0",
+        "tile-border": "#5188a6",
+        "tile-text": "#0d2538",
+        "key-bg": "#5188a6",
         "key-text": "#ffffff",
         "btn-hint-bg": "#d3ad69",
         "btn-hint-text": "#ffffff",
@@ -19,10 +19,10 @@
         "btn-giveup-text": "#ffffff",
         "correct-bg": "#3aa394",
         "present-bg": "#d3ad69",
-        "absent-bg": "#312a2c",
-        "modal-bg": "#615458",
-        "modal-border": "#4c4347",
-        "dropdown-bg": "#4c4347",
+        "absent-bg": "#5c7080",
+        "modal-bg": "#aed5f0",
+        "modal-border": "#5188a6",
+        "dropdown-bg": "#5188a6",
         "dropdown-text": "#ffffff"
     }
 }

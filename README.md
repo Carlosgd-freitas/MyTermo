@@ -20,8 +20,9 @@ The game ends if:
 3. Maximum number of attempts can be changed through the `MAX_ATTEMPTS` constant at `config.py`.
 4. Characters given at the start of the game can be changed through the `GIVEN_TILES` constant at `config.py`.
 5. Messages are present on `messages.py` and are grouped together by their context (Victory, Fail and Give Up). Each context is a dictionary, where the key is the language, and the value is a list of messages where one of them will be chosen randomly and shown once their condition is met.
-6. Browser favicon can be changed through `favicon.ico`.
-7. Frontend elements, such as background and grid tiles, can be customized at `static/css/styles.css`.
+6. New themes can be added directly to the `/themes` folder, as they are dinamically imported.
+7. Frontend elements can be customized at `static/css/styles.css`.
+8. Browser favicon can be changed through `favicon.ico`.
 
 # Running
 1. Execute `uvicorn main:app --reload`.
