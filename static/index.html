@@ -3,61 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
-    <link rel="stylesheet" href="/css/styles.css">
     <title>MyTermo</title>
+    <!-- Base styles only -->
+    <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+    <div id="game-container">
+        <header class="header">
+            <div class="header-left">
+                <button id="theme-btn" class="icon-btn" onclick="openThemeModal()">Theme</button>
+            </div>
+            <h1 id="game-title">MyTermo</h1>
+            <div class="header-right">
+                <div class="lang-container">
+                    <label for="lang-select" class="lang-label" id="lang-label">Language</label>
+                    <select id="lang-select" class="lang-dropdown" onchange="changeLanguage(this.value)">
+                        <option value="en">🇺🇸 English</option>
+                        <option value="pt">🇧🇷 Português</option>
+                    </select>
+                </div>
+            </div>
+        </header>
 
-    <div class="lang-container">
-        <button id="lang-en" class="lang-btn" onclick="changeLanguage('en')">
-            <svg class="flag-icon" viewBox="0 0 60 30">
-                <clipPath id="s"><path d="M0,0 v30 h60 v-30 z"/></clipPath>
-                <clipPath id="t"><path d="M30,15 h30 v15 z M30,15 h-30 v-15 z M30,15 h-30 v15 z M30,15 h30 v-15 z"/></clipPath>
-                <g clip-path="url(#s)">
-                    <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/>
-                    <path d="M0,0 L60,30 M60,0 L0,30" stroke="#cf142b" stroke-width="2" clip-path="url(#t)"/>
-                    <path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/>
-                    <path d="M30,0 v30 M0,15 h60" stroke="#cf142b" stroke-width="6"/>
-                </g>
-            </svg> EN
-        </button>
-        <button id="lang-pt" class="lang-btn" onclick="changeLanguage('pt')">
-            <svg class="flag-icon" viewBox="0 0 700 490">
-                <rect width="700" height="490" fill="#009b3a"/>
-                <path d="M350,42 L658,245 L350,448 L42,245 Z" fill="#fedf00"/>
-                <circle cx="350" cy="245" r="126" fill="#002776"/>
-            </svg> PT
-        </button>
-    </div>
-
-    <h1 id="game-title">TERMO</h1>
-
-    <div class="grid-container">
-        <div class="action-controls">
-            <button id="hint-btn" class="action-btn hint-btn" onclick="useHint()">Hint</button>
-            <button id="giveup-btn" class="action-btn giveup-btn" onclick="giveUp()">Give Up</button>
-        </div>
-        
+        <div id="message"></div>
         <div id="grid"></div>
+
+        <div class="actions">
+            <button id="hint-btn" onclick="useHint()">Hint</button>
+            <button id="giveup-btn" onclick="giveUp()">Give Up</button>
+        </div>
+
+        <div id="keyboard"></div>
     </div>
 
-    <div id="message"></div>
-    <div id="keyboard"></div>
+    <!-- Theme Modal -->
+    <div id="theme-modal" class="modal-overlay">
+        <div class="modal-content theme-modal-content">
+            <button class="modal-close-x" onclick="closeThemeModal()">&times;</button>
+            <h2 id="theme-modal-title">Select Theme</h2>
+            <div id="theme-grid" class="theme-grid"></div>
+        </div>
+    </div>
 
-    <!-- End-Game Popup Modal -->
+    <!-- Endgame Modal -->
     <div id="endgame-modal" class="modal-overlay">
         <div class="modal-content">
-            <div id="modal-title" class="modal-title"></div>
-            <div id="modal-message" class="modal-message"></div>
-            <div id="modal-word-container" class="modal-word-container" style="display: none;">
-                <div id="modal-word-label" class="modal-word-label"></div>
-                <div id="modal-word" class="modal-word"></div>
+            <h2 id="modal-title"></h2>
+            <p id="modal-message"></p>
+            <div id="modal-word-container" style="display: none;">
+                <span id="modal-word-label"></span>
+                <strong id="modal-word"></strong>
             </div>
             <button class="modal-close-btn" onclick="closeModal()">OK</button>
         </div>
     </div>
 
-    <script src="/js/app.js"></script>
+    <script src="/app.js"></script>
 </body>
 </html>

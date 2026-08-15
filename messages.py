@@ -1,3 +1,5 @@
+"""Localized message pools for end-of-game conditions."""
+
 VICTORY_MESSAGES = {
     "en": [
         "Sensational! You guessed it!",

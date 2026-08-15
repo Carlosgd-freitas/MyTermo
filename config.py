@@ -1,5 +1,6 @@
-# Game Customizations
+"""Game configuration parameters."""
+
 TITLE = "MyTermo"
-TARGET_WORD = "abc"
+TARGET_WORD = "Termo"
 MAX_ATTEMPTS = 6
-GIVEN_TILES = ["a", "b", "c"]
+GIVEN_TILES = [" ", "-"]

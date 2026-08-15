@@ -2,6 +2,12 @@ const TRANSLATIONS = {
     en: {
         giveUp: "Give Up",
         hint: "Hint",
+        langLabel: "Language",
+        themeBtn: "Theme",
+        selectTheme: "Select Theme",
+        absentLabel: "Absent",
+        presentLabel: "Present",
+        correctLabel: "Correct",
         noHints: "No hints left!",
         mustFill: (len) => `Fill all ${len} letters!`,
         wordWas: "The word was:",
@@ -15,6 +21,12 @@ const TRANSLATIONS = {
     pt: {
         giveUp: "Desistir",
         hint: "Dica",
+        langLabel: "Linguagem",
+        themeBtn: "Tema",
+        selectTheme: "Selecionar Tema",
+        absentLabel: "Ausente",
+        presentLabel: "Presente",
+        correctLabel: "Correta",
         noHints: "Sem dicas restantes!",
         mustFill: (len) => `Preencha todas as ${len} letras!`,
         wordWas: "A palavra era:",
@@ -28,6 +40,8 @@ const TRANSLATIONS = {
 };
 
 let currentLang = localStorage.getItem('termo_lang') || 'en';
+let currentThemeId = localStorage.getItem('termo_theme') || 'classic';
+let availableThemes = [];
 
 let wordLength = 5;
 let maxAttempts = 6;
@@ -41,7 +55,7 @@ let gameEndState = null;
 let isAnimating = false;
 let messageTimeout = null;
 
-let givenTiles = {}; // Mapping of { index: character }
+let givenTiles = {};
 let correctIndices = new Set();
 
 const letterStatuses = {};
@@ -54,10 +68,19 @@ const KEYBOARD_LAYOUT = [
 
 const STATUS_PRIORITY = { "correct": 3, "present": 2, "absent": 1 };
 
+/**
+ * Checks whether a given column index contains a pre-filled/fixed character.
+ * @param {number} index - Column index to check.
+ * @returns {boolean} True if tile is fixed.
+ */
 function isFixedTile(index) {
     return index in givenTiles;
 }
 
+/**
+ * Finds the first editable tile index in the word row.
+ * @returns {number} Index of first non-fixed tile.
+ */
 function getFirstValidIndex() {
     for (let i = 0; i < wordLength; i++) {
         if (!isFixedTile(i)) return i;
@@ -65,6 +88,10 @@ function getFirstValidIndex() {
     return 0;
 }
 
+/**
+ * Finds the last editable tile index in the word row.
+ * @returns {number} Index of last non-fixed tile.
+ */
 function getLastValidIndex() {
     for (let i = wordLength - 1; i >= 0; i--) {
         if (!isFixedTile(i)) return i;
@@ -72,6 +99,12 @@ function getLastValidIndex() {
     return 0;
 }
 
+/**
+ * Calculates the next editable cursor position in a given direction.
+ * @param {number} fromIndex - Current index.
+ * @param {number} direction - Offset direction (+1 or -1).
+ * @returns {number} Next valid tile index.
+ */
 function getNextValidIndex(fromIndex, direction) {
     let idx = fromIndex + direction;
     while (idx >= 0 && idx < wordLength) {
@@ -83,6 +116,10 @@ function getNextValidIndex(fromIndex, direction) {
     return direction > 0 ? getLastValidIndex() : getFirstValidIndex();
 }
 
+/**
+ * Generates a clean guess buffer array respecting pre-filled given tiles.
+ * @returns {string[]} Array initialized with fixed characters or empty strings.
+ */
 function createEmptyGuessArray() {
     return Array(wordLength).fill("").map((_, i) => {
         if (isFixedTile(i)) return givenTiles[i];
@@ -90,80 +127,197 @@ function createEmptyGuessArray() {
     });
 }
 
+/**
+ * Applies theme CSS root variables directly to document element.
+ * @param {Object} theme - Theme object loaded from JSON.
+ */
+function applyTheme(theme) {
+    if (!theme || !theme.colors) return;
+    
+    currentThemeId = theme.id;
+    localStorage.setItem('termo_theme', currentThemeId);
+
+    const root = document.documentElement;
+    Object.entries(theme.colors).forEach(([key, value]) => {
+        root.style.setProperty(`--${key}`, value);
+    });
+}
+
+/**
+ * Initializes game session, loads remote configuration and sets initial state.
+ */
 async function initGame() {
     clearMessage();
-    const res = await fetch('/api/config');
-    const config = await res.json();
-    
-    document.title = config.title;
-    document.getElementById('game-title').innerText = config.title;
 
-    wordLength = config.length;
-    maxAttempts = config.max_attempts;
-
-    givenTiles = config.given_tiles || {};
-    correctIndices = new Set();
-
-    Object.keys(givenTiles).forEach(idxStr => {
-        correctIndices.add(parseInt(idxStr, 10));
-    });
-
-    currentGuess = createEmptyGuessArray();
-    cursorIndex = getFirstValidIndex();
-
-    document.documentElement.style.setProperty('--word-length', wordLength);
-
-    updateLangToggleUI();
-    updateUITexts();
-    buildGrid();
-    buildKeyboard();
-    updateCurrentRow();
-
-    document.addEventListener('keydown', handlePhysicalKeyboard);
-
-    // Check for immediate victory condition (all tiles given for free)
-    const givenCount = Object.keys(givenTiles).length;
-    if (givenCount === wordLength && wordLength > 0) {
-        gameOver = true;
-        gameEndState = {
-            type: 'win',
-            messages: config.victory_messages
-        };
-
-        for (let c = 0; c < wordLength; c++) {
-            const tile = document.getElementById(`tile-0-${c}`);
-            if (tile) {
-                tile.classList.remove('given-tile', 'space-tile');
-                tile.classList.add('correct');
+    try {
+        const themeRes = await fetch('/api/themes');
+        if (themeRes.ok) {
+            availableThemes = await themeRes.json();
+            
+            const activeTheme = availableThemes.find(t => t.id === currentThemeId) || availableThemes[0];
+            if (activeTheme) {
+                applyTheme(activeTheme);
             }
+            renderThemeModal();
         }
+    } catch (e) {
+        console.error("Failed to fetch themes from /api/themes", e);
+    }
 
-        grayOutRemainingTiles();
+    try {
+        const res = await fetch('/api/config');
+        const config = await res.json();
+        
+        document.title = config.title;
+        document.getElementById('game-title').innerText = config.title;
+
+        wordLength = config.length;
+        maxAttempts = config.max_attempts;
+
+        givenTiles = config.given_tiles || {};
+        correctIndices = new Set();
+
+        Object.keys(givenTiles).forEach(idxStr => {
+            correctIndices.add(parseInt(idxStr, 10));
+        });
+
+        currentGuess = createEmptyGuessArray();
+        cursorIndex = getFirstValidIndex();
+
+        document.documentElement.style.setProperty('--word-length', wordLength);
+
+        updateLangToggleUI();
         updateUITexts();
-        disableActionButtons();
-        openModal();
+        buildGrid();
+        buildKeyboard();
+        updateCurrentRow();
+
+        document.addEventListener('keydown', handlePhysicalKeyboard);
+
+        const givenCount = Object.keys(givenTiles).length;
+        if (givenCount === wordLength && wordLength > 0) {
+            gameOver = true;
+            gameEndState = {
+                type: 'win',
+                messages: config.victory_messages
+            };
+
+            for (let c = 0; c < wordLength; c++) {
+                const tile = document.getElementById(`tile-0-${c}`);
+                if (tile) {
+                    tile.classList.remove('given-tile', 'space-tile');
+                    tile.classList.add('correct');
+                }
+            }
+
+            grayOutRemainingTiles();
+            updateUITexts();
+            disableActionButtons();
+            openModal();
+        }
+    } catch (e) {
+        console.error("Failed to initialize game config", e);
     }
 }
 
+/** Opens theme selector modal window. */
+function openThemeModal() {
+    renderThemeModal();
+    document.getElementById('theme-modal').classList.add('active');
+}
+
+/** Closes theme selector modal window. */
+function closeThemeModal() {
+    document.getElementById('theme-modal').classList.remove('active');
+}
+
+/** Renders cards inside theme modal based on configured themes. */
+function renderThemeModal() {
+    const themeGrid = document.getElementById('theme-grid');
+    if (!themeGrid) return;
+    
+    themeGrid.innerHTML = '';
+
+    availableThemes.forEach(theme => {
+        const colors = theme.colors || {};
+        
+        const bg = colors['bg-color'] || colors.bg;
+        const text = colors['text-color'] || colors.text;
+        const absent = colors['absent-bg'] || colors.absent;
+        const present = colors['present-bg'] || colors.present;
+        const correct = colors['correct-bg'] || colors.correct;
+        const border = colors['tile-border'] || colors['modal-border'] || '#4c4347';
+
+        const card = document.createElement('div');
+        card.className = `theme-card ${theme.id === currentThemeId ? 'active' : ''}`;
+        
+        card.style.setProperty('--p-bg', bg);
+        card.style.setProperty('--p-text', text);
+        card.style.setProperty('--p-absent', absent);
+        card.style.setProperty('--p-present', present);
+        card.style.setProperty('--p-correct', correct);
+        card.style.setProperty('--tile-border', border);
+
+        const langSelect = document.getElementById('lang-select');
+        const lang = langSelect ? langSelect.value : currentLang;
+        const themeName = (theme.name && (theme.name[lang] || theme.name.en)) || theme.id;
+
+        card.innerHTML = `
+            <div class="theme-card-title">${themeName}</div>
+            <div class="theme-preview-box">
+                <div class="preview-tiles-row">
+                    <div class="preview-tile absent">A</div>
+                    <div class="preview-tile present">B</div>
+                    <div class="preview-tile correct">C</div>
+                </div>
+            </div>
+        `;
+
+        card.onclick = () => {
+            applyTheme(theme);
+            renderThemeModal();
+        };
+
+        themeGrid.appendChild(card);
+    });
+}
+
+/**
+ * Updates application language state.
+ * @param {string} lang - Language code ('en' or 'pt').
+ */
 function changeLanguage(lang) {
     currentLang = lang;
     localStorage.setItem('termo_lang', lang);
     updateLangToggleUI();
     updateUITexts();
+    renderThemeModal();
 }
 
+/** Syncs language selector dropdown value. */
 function updateLangToggleUI() {
-    document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-    const activeBtn = document.getElementById(`lang-${currentLang}`);
-    if (activeBtn) activeBtn.classList.add('active');
+    const langSelect = document.getElementById('lang-select');
+    if (langSelect) {
+        langSelect.value = currentLang;
+    }
 }
 
+/** Refreshes localized texts across active UI components and modals. */
 function updateUITexts() {
+    const langLabel = document.getElementById('lang-label');
+    if (langLabel) langLabel.textContent = TRANSLATIONS[currentLang].langLabel;
+
     const giveUpBtn = document.getElementById('giveup-btn');
     if (giveUpBtn) giveUpBtn.innerText = TRANSLATIONS[currentLang].giveUp;
 
     const hintBtn = document.getElementById('hint-btn');
     if (hintBtn) hintBtn.innerText = TRANSLATIONS[currentLang].hint;
+
+    const themeBtn = document.getElementById('theme-btn');
+    if (themeBtn) themeBtn.innerText = TRANSLATIONS[currentLang].themeBtn;
+
+    const themeModalTitle = document.getElementById('theme-modal-title');
+    if (themeModalTitle) themeModalTitle.innerText = TRANSLATIONS[currentLang].selectTheme;
 
     if (gameEndState) {
         const t = TRANSLATIONS[currentLang];
@@ -190,15 +344,18 @@ function updateUITexts() {
     }
 }
 
+/** Display victory/defeat/pity endgame modal window. */
 function openModal() {
     clearMessage();
     document.getElementById('endgame-modal').classList.add('active');
 }
 
+/** Close active modal window. */
 function closeModal() {
     document.getElementById('endgame-modal').classList.remove('active');
 }
 
+/** Constructs active board grid DOM elements. */
 function buildGrid() {
     const grid = document.getElementById('grid');
     grid.innerHTML = '';
@@ -235,6 +392,7 @@ function buildGrid() {
     }
 }
 
+/** Constructs virtual keyboard buttons DOM elements. */
 function buildKeyboard() {
     const keyboard = document.getElementById('keyboard');
     keyboard.innerHTML = '';
@@ -266,6 +424,10 @@ function buildKeyboard() {
     });
 }
 
+/**
+ * Handles physical keyboard listener events.
+ * @param {KeyboardEvent} e - Keyboard event object.
+ */
 function handlePhysicalKeyboard(e) {
     if (gameOver || isAnimating) return;
 
@@ -293,6 +455,10 @@ function handlePhysicalKeyboard(e) {
     }
 }
 
+/**
+ * Process key command or character into guess state buffer.
+ * @param {string} key - Pressed character or special action string.
+ */
 function processInput(key) {
     if (gameOver || isAnimating) return;
 
@@ -313,18 +479,9 @@ function processInput(key) {
             }
         }
         updateCurrentRow();
-    } else if (key === 'SPACE') {
+    } else if (key === 'SPACE' || /^[A-Z\-]$/.test(key)) {
         if (!isFixedTile(cursorIndex)) {
-            currentGuess[cursorIndex] = " ";
-            const nextIndex = getNextValidIndex(cursorIndex, 1);
-            if (nextIndex > cursorIndex) {
-                cursorIndex = nextIndex;
-            }
-        }
-        updateCurrentRow();
-    } else if (/^[A-Z\-]$/.test(key)) {
-        if (!isFixedTile(cursorIndex)) {
-            currentGuess[cursorIndex] = key;
+            currentGuess[cursorIndex] = key === 'SPACE' ? ' ' : key;
             const nextIndex = getNextValidIndex(cursorIndex, 1);
             if (nextIndex > cursorIndex) {
                 cursorIndex = nextIndex;
@@ -334,6 +491,7 @@ function processInput(key) {
     }
 }
 
+/** Re-renders current active attempt row tiles. */
 function updateCurrentRow() {
     for (let c = 0; c < wordLength; c++) {
         const tile = document.getElementById(`tile-${currentAttempt}-${c}`);
@@ -353,7 +511,6 @@ function updateCurrentRow() {
 
         const letter = currentGuess[c] || "";
         tile.innerText = letter;
-
         tile.className = "tile";
 
         if (letter) {
@@ -366,6 +523,7 @@ function updateCurrentRow() {
     }
 }
 
+/** Requests a hint from server API and triggers row reveal animation. */
 async function useHint() {
     if (gameOver || isAnimating) return;
 
@@ -398,6 +556,7 @@ async function useHint() {
     }
 }
 
+/** Submits current guess attempt to server API. */
 async function submitGuess() {
     if (gameOver || isAnimating) return;
 
@@ -438,6 +597,11 @@ async function submitGuess() {
     }
 }
 
+/**
+ * Animates tile reveals for attempt/hint result and updates game state.
+ * @param {Object} data - Server result object.
+ * @returns {Promise<void>} Resolves when flip animation completes.
+ */
 function animateAndProcessResult(data) {
     return new Promise((resolve) => {
         isAnimating = true;
@@ -480,7 +644,6 @@ function animateAndProcessResult(data) {
 
         setTimeout(() => {
             isAnimating = false;
-
             const isWin = data.pattern.every((s, idx) => isFixedTile(idx) || s === "correct");
 
             if (isWin) {
@@ -522,6 +685,7 @@ function animateAndProcessResult(data) {
     });
 }
 
+/** Surrenders current game match immediately. */
 async function giveUp() {
     if (gameOver || isAnimating) return;
 
@@ -547,6 +711,7 @@ async function giveUp() {
     openModal();
 }
 
+/** Disables action buttons when game is finished. */
 function disableActionButtons() {
     const giveUpBtn = document.getElementById('giveup-btn');
     if (giveUpBtn) giveUpBtn.disabled = true;
@@ -555,6 +720,11 @@ function disableActionButtons() {
     if (hintBtn) hintBtn.disabled = true;
 }
 
+/**
+ * Updates keyboard key status colors based on status hierarchy.
+ * @param {string} letter - Key character.
+ * @param {string} newStatus - Match status ('correct', 'present', 'absent').
+ */
 function updateKeyStatus(letter, newStatus) {
     const currentStatus = letterStatuses[letter];
 
@@ -569,6 +739,10 @@ function updateKeyStatus(letter, newStatus) {
     }
 }
 
+/**
+ * Display temporary message string above board grid.
+ * @param {string} text - Message text.
+ */
 function showMessage(text) {
     const msgEl = document.getElementById('message');
     if (!msgEl) return;
@@ -581,6 +755,7 @@ function showMessage(text) {
     }, 3000);
 }
 
+/** Clears temporary UI banner text. */
 function clearMessage() {
     const msgEl = document.getElementById('message');
     if (msgEl) msgEl.innerText = '';
@@ -591,6 +766,7 @@ function clearMessage() {
     }
 }
 
+/** Grays out remaining un-evaluated tiles across board. */
 function grayOutRemainingTiles() {
     for (let r = 0; r < maxAttempts; r++) {
         for (let c = 0; c < wordLength; c++) {

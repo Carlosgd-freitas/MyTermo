@@ -1,0 +1,24 @@
+{
+    "id": "classic",
+    "name": {
+        "en": "Classic",
+        "pt": "Clássico"
+    },
+    "colors": {
+        "font-family": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+        "bg-color": "#6e5c62",
+        "text-color": "#ffffff",
+        "tile-bg": "#615458",
+        "tile-border": "#4c4347",
+        "tile-text": "#ffffff",
+        "key-bg": "#4c4347",
+        "key-text": "#ffffff",
+        "correct-bg": "#3aa394",
+        "present-bg": "#d3ad69",
+        "absent-bg": "#312a2c",
+        "modal-bg": "#615458",
+        "modal-border": "#4c4347",
+        "dropdown-bg": "#4c4347",
+        "dropdown-text": "#ffffff"
+    }
+}
