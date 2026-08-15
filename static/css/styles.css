@@ -215,6 +215,15 @@ h1 {
     opacity: 0.85;
 }
 
+.tile.given-tile {
+    background-color: var(--tile-bg);
+    border-color: #88747a;
+    color: var(--text-color);
+    font-weight: bold;
+    pointer-events: none;
+    opacity: 0.85;
+}
+
 .key.space-bar-key {
     flex: 3;
     max-width: 260px;

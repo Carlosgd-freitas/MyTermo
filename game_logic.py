@@ -1,5 +1,6 @@
 import random
 import unicodedata
+from config import GIVEN_TILES
 from messages import FAIL_MESSAGES, GIVE_UP_MESSAGES, VICTORY_MESSAGES
 
 
@@ -8,6 +9,12 @@ def normalize_string(text: str) -> str:
     nfkd = unicodedata.normalize('NFD', text)
     cleaned = "".join([c for c in nfkd if not unicodedata.combining(c)])
     return cleaned.upper().strip()
+
+
+def normalize_given_tiles(given_tiles: list[str] = None) -> set[str]:
+    """Returns a set of normalized given tile characters."""
+    tiles = GIVEN_TILES if given_tiles is None else given_tiles
+    return {normalize_string(t) for t in tiles}
 
 
 def get_random_endgame_messages() -> dict:
@@ -32,11 +39,12 @@ def get_random_pity_message() -> dict:
     }
 
 
-def evaluate_guess(guess: str, target_word: str) -> tuple[list[str], list[str]]:
+def evaluate_guess(guess: str, target_word: str, given_tiles: list[str] = None) -> tuple[list[str], list[str]]:
     """
     Evaluates guess against target_word.
     Returns a tuple: (pattern_list, revealed_letters_list).
     """
+    given_set = normalize_given_tiles(given_tiles)
     guess_norm = normalize_string(guess)
     target_norm = normalize_string(target_word)
 
@@ -44,9 +52,9 @@ def evaluate_guess(guess: str, target_word: str) -> tuple[list[str], list[str]]:
     pattern = ["absent"] * n
     target_counts = {}
 
-    # Pass 1: Mark exact matches, fixed spaces, and fixed hyphens
+    # Pass 1: Mark exact matches and free given tiles
     for i in range(n):
-        if target_norm[i] in [' ', '-']:
+        if target_norm[i] in given_set:
             pattern[i] = "correct"
         elif i < len(guess_norm) and guess_norm[i] == target_norm[i]:
             pattern[i] = "correct"

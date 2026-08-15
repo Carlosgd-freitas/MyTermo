@@ -11,9 +11,6 @@ The game ends if:
 * The player runs out of tries.
 * The player gives up and presses the corresponding button, revealing the word.
 
-# Given Tiles
-By default, space and hyphen tiles are "given for free" when the game starts. This can be changed in **Settings**.
-
 # Setup
 1. Install all required packages by executing `pip install -r requirements.txt`.
 
@@ -21,9 +18,10 @@ By default, space and hyphen tiles are "given for free" when the game starts. Th
 1. Game title can be changed through the `TITLE` constant at `config.py`.
 2. Target word can be changed through the `TARGET_WORD` constant at `config.py`.
 3. Maximum number of attempts can be changed through the `MAX_ATTEMPTS` constant at `config.py`.
-4. Messages are present on `messages.py` and are grouped together by their context (Victory, Fail and Give Up). Each context is a dictionary, where the key is the language, and the value is a list of messages where one of them will be chosen randomly and shown once their condition is met.
-5. Browser favicon can be changed through `favicon.ico`.
-6. Frontend elements, such as background and grid tiles, can be customized at `static/css/styles.css`.
+4. Characters given at the start of the game can be changed through the `GIVEN_TILES` constant at `config.py`.
+5. Messages are present on `messages.py` and are grouped together by their context (Victory, Fail and Give Up). Each context is a dictionary, where the key is the language, and the value is a list of messages where one of them will be chosen randomly and shown once their condition is met.
+6. Browser favicon can be changed through `favicon.ico`.
+7. Frontend elements, such as background and grid tiles, can be customized at `static/css/styles.css`.
 
 # Running
 1. Execute `uvicorn main:app --reload`.
@@ -32,8 +30,6 @@ By default, space and hyphen tiles are "given for free" when the game starts. Th
 # Planned Features
 * Automated Tests
 * Instructions button
-* Settings
-  * Space and Hyphen tiles are free
 * Color theme selection with pre-made themes
 * Support for simulatenous games (guess N words at a time)
 * Optional "Theme" box
