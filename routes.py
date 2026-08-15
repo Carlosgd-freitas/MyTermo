@@ -38,6 +38,9 @@ def get_config():
         "space_indices": [
             i for i, char in enumerate(TARGET_WORD) if char == " "
         ],
+        "hyphen_indices": [
+            i for i, char in enumerate(TARGET_WORD) if char == "-"
+        ],
     }
 
 
@@ -66,13 +69,13 @@ def check_guess(request: GuessRequest):
 @router.post("/api/hint")
 def get_hint(request: HintRequest):
     target_len = len(TARGET_WORD)
-    space_indices = {i for i, char in enumerate(TARGET_WORD) if char == " "}
+    fixed_indices = {i for i, char in enumerate(TARGET_WORD) if char in (" ", "-")}
 
-    # Filter out spaces and already revealed correct positions
+    # Filter out spaces, hyphens, and already revealed positions
     unrevealed = [
         i
         for i in range(target_len)
-        if i not in space_indices and i not in request.revealed_indices
+        if i not in fixed_indices and i not in request.revealed_indices
     ]
 
     if not unrevealed:
@@ -81,15 +84,17 @@ def get_hint(request: HintRequest):
     # Randomly pick one unrevealed correct letter index
     hint_idx = random.choice(unrevealed)
 
-    # Build hint word with '-' for unrevealed non-space positions
+    # Build hint word with '.' for unrevealed letter positions
     hint_chars = []
     for i, char in enumerate(TARGET_WORD):
-        if i in space_indices:
+        if char == " ":
             hint_chars.append(" ")
-        elif i == hint_idx:
+        elif char == "-":
+            hint_chars.append("-")
+        elif i == hint_idx or i in request.revealed_indices:
             hint_chars.append(char)
         else:
-            hint_chars.append("-")
+            hint_chars.append(".")
 
     hint_word = "".join(hint_chars)
     pattern, revealed_letters = evaluate_guess(hint_word, TARGET_WORD)

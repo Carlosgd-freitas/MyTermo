@@ -11,8 +11,8 @@ The game ends if:
 * The player runs out of tries.
 * The player gives up and presses the corresponding button, revealing the word.
 
-#
-spaces
+# Given Tiles
+By default, space and hyphen tiles are "given for free" when the game starts. This can be changed in **Settings**.
 
 # Setup
 1. Install all required packages by executing `pip install -r requirements.txt`.
@@ -28,3 +28,12 @@ spaces
 # Running
 1. Execute `uvicorn main:app --reload`.
 2. In a browser, enter the address `http://localhost:8000`.
+
+# Planned Features
+* Automated Tests
+* Instructions button
+* Settings
+  * Space and Hyphen tiles are free
+* Color theme selection with pre-made themes
+* Support for simulatenous games (guess N words at a time)
+* Optional "Theme" box

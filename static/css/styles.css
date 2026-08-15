@@ -206,6 +206,22 @@ h1 {
     pointer-events: none;
 }
 
+.tile.hyphen-tile {
+    background-color: var(--tile-bg);
+    border-color: #88747a;
+    color: var(--text-color);
+    font-weight: bold;
+    pointer-events: none;
+    opacity: 0.85;
+}
+
+.key.space-bar-key {
+    flex: 3;
+    max-width: 260px;
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+}
+
 #message {
     min-height: 28px;
     font-size: 1rem;
@@ -220,7 +236,7 @@ h1 {
     flex-direction: column;
     gap: 6px;
     width: 100%;
-    max-width: 500px;
+    max-width: 580px; /* Expanded from 500px to give Row 3 extra room */
     padding: 0 8px;
     box-sizing: border-box;
     margin-bottom: 16px;
@@ -230,6 +246,7 @@ h1 {
     display: flex;
     justify-content: center;
     gap: 5px;
+    width: 100%;
 }
 
 .key {
@@ -237,10 +254,11 @@ h1 {
     color: var(--key-text);
     border: none;
     border-radius: 4px;
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: bold;
     height: 52px;
     flex: 1;
+    min-width: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -255,7 +273,14 @@ h1 {
 
 .key.large {
     flex: 1.5;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
+}
+
+/* Space bar now spans the width of 3 standard letter keys */
+.key.space-bar-key {
+    flex: 3;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
 }
 
 /* Tile Flip Animation */

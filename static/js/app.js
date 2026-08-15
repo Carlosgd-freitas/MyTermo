@@ -42,14 +42,15 @@ let isAnimating = false;
 let messageTimeout = null;
 
 let spaceIndices = new Set();
+let hyphenIndices = new Set();
 let correctIndices = new Set();
 
 const letterStatuses = {};
 
 const KEYBOARD_LAYOUT = [
     ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
-    ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
-    ["ENTER", "Z", "X", "C", "V", "B", "N", "M", "DEL"]
+    ["A", "S", "D", "F", "G", "H", "J", "K", "L", "-"],
+    ["ENTER", "Z", "X", "C", "V", "SPACE", "B", "N", "M", "DEL"]
 ];
 
 const STATUS_PRIORITY = { "correct": 3, "present": 2, "absent": 1 };
@@ -58,16 +59,24 @@ function isSpaceTile(index) {
     return spaceIndices.has(index);
 }
 
+function isHyphenTile(index) {
+    return hyphenIndices.has(index);
+}
+
+function isFixedTile(index) {
+    return isSpaceTile(index) || isHyphenTile(index);
+}
+
 function getFirstValidIndex() {
     for (let i = 0; i < wordLength; i++) {
-        if (!isSpaceTile(i)) return i;
+        if (!isFixedTile(i)) return i;
     }
     return 0;
 }
 
 function getLastValidIndex() {
     for (let i = wordLength - 1; i >= 0; i--) {
-        if (!isSpaceTile(i)) return i;
+        if (!isFixedTile(i)) return i;
     }
     return 0;
 }
@@ -75,12 +84,20 @@ function getLastValidIndex() {
 function getNextValidIndex(fromIndex, direction) {
     let idx = fromIndex + direction;
     while (idx >= 0 && idx < wordLength) {
-        if (!isSpaceTile(idx)) {
+        if (!isFixedTile(idx)) {
             return idx;
         }
         idx += direction;
     }
     return direction > 0 ? getLastValidIndex() : getFirstValidIndex();
+}
+
+function createEmptyGuessArray() {
+    return Array(wordLength).fill("").map((_, i) => {
+        if (isSpaceTile(i)) return " ";
+        if (isHyphenTile(i)) return "-";
+        return "";
+    });
 }
 
 async function initGame() {
@@ -95,6 +112,7 @@ async function initGame() {
     maxAttempts = config.max_attempts;
 
     spaceIndices = new Set();
+    hyphenIndices = new Set();
     correctIndices = new Set();
 
     if (Array.isArray(config.space_indices)) {
@@ -104,7 +122,14 @@ async function initGame() {
         config.spaces.forEach(i => spaceIndices.add(i));
     }
 
-    currentGuess = Array(wordLength).fill("").map((_, i) => isSpaceTile(i) ? " " : "");
+    if (Array.isArray(config.hyphen_indices)) {
+        config.hyphen_indices.forEach(i => hyphenIndices.add(i));
+    }
+    if (Array.isArray(config.hyphens)) {
+        config.hyphens.forEach(i => hyphenIndices.add(i));
+    }
+
+    currentGuess = createEmptyGuessArray();
     cursorIndex = getFirstValidIndex();
 
     document.documentElement.style.setProperty('--word-length', wordLength);
@@ -156,7 +181,6 @@ function updateUITexts() {
 
         document.querySelector('.modal-close-btn').innerText = t.ok;
 
-        // Only trigger openModal if the endgame modal is currently visible
         const modalEl = document.getElementById('endgame-modal');
         if (modalEl && modalEl.classList.contains('active')) {
             openModal();
@@ -187,6 +211,9 @@ function buildGrid() {
 
             if (isSpaceTile(c)) {
                 tile.className = 'tile space-tile';
+            } else if (isHyphenTile(c)) {
+                tile.className = 'tile hyphen-tile';
+                tile.innerText = '-';
             } else {
                 tile.className = 'tile';
                 tile.addEventListener('click', () => {
@@ -219,6 +246,8 @@ function buildKeyboard() {
 
             if (keyText === 'ENTER' || keyText === 'DEL') {
                 button.classList.add('large');
+            } else if (keyText === 'SPACE') {
+                button.classList.add('space-bar-key');
             }
 
             button.addEventListener('click', () => {
@@ -239,6 +268,8 @@ function handlePhysicalKeyboard(e) {
         processInput('ENTER');
     } else if (e.key === 'Backspace' || e.key === 'Delete') {
         processInput('DEL');
+    } else if (e.key === ' ' || e.code === 'Space') {
+        processInput('SPACE');
     } else if (e.key === 'ArrowLeft') {
         cursorIndex = getNextValidIndex(cursorIndex, -1);
         updateCurrentRow();
@@ -251,7 +282,7 @@ function handlePhysicalKeyboard(e) {
             .replace(/[\u0300-\u036f]/g, "")
             .toUpperCase();
 
-        if (/^[A-Z]$/.test(normalizedKey)) {
+        if (/^[A-Z\-]$/.test(normalizedKey)) {
             processInput(normalizedKey);
         }
     }
@@ -260,7 +291,7 @@ function handlePhysicalKeyboard(e) {
 function processInput(key) {
     if (gameOver || isAnimating) return;
 
-    if (isSpaceTile(cursorIndex)) {
+    if (isFixedTile(cursorIndex)) {
         cursorIndex = getFirstValidIndex();
     }
 
@@ -277,8 +308,17 @@ function processInput(key) {
             }
         }
         updateCurrentRow();
-    } else if (/^[A-Z]$/.test(key)) {
-        if (!isSpaceTile(cursorIndex)) {
+    } else if (key === 'SPACE') {
+        if (!isFixedTile(cursorIndex)) {
+            currentGuess[cursorIndex] = " ";
+            const nextIndex = getNextValidIndex(cursorIndex, 1);
+            if (nextIndex > cursorIndex) {
+                cursorIndex = nextIndex;
+            }
+        }
+        updateCurrentRow();
+    } else if (/^[A-Z\-]$/.test(key)) {
+        if (!isFixedTile(cursorIndex)) {
             currentGuess[cursorIndex] = key;
             const nextIndex = getNextValidIndex(cursorIndex, 1);
             if (nextIndex > cursorIndex) {
@@ -297,6 +337,12 @@ function updateCurrentRow() {
         if (isSpaceTile(c)) {
             tile.className = "tile space-tile";
             tile.innerText = "";
+            continue;
+        }
+
+        if (isHyphenTile(c)) {
+            tile.className = "tile hyphen-tile";
+            tile.innerText = "-";
             continue;
         }
 
@@ -321,7 +367,7 @@ async function useHint() {
     clearMessage();
     isAnimating = true;
 
-    currentGuess = Array(wordLength).fill("").map((_, i) => isSpaceTile(i) ? " " : "");
+    currentGuess = createEmptyGuessArray();
     updateCurrentRow();
 
     try {
@@ -352,8 +398,8 @@ async function submitGuess() {
 
     clearMessage();
 
-    if (currentGuess.some((char, idx) => !isSpaceTile(idx) && char === "")) {
-        const fillLength = wordLength - spaceIndices.size;
+    if (currentGuess.some((char, idx) => !isFixedTile(idx) && char === "")) {
+        const fillLength = wordLength - spaceIndices.size - hyphenIndices.size;
         showMessage(TRANSLATIONS[currentLang].mustFill(fillLength));
         return;
     }
@@ -400,7 +446,7 @@ function animateAndProcessResult(data) {
 
         for (let i = 0; i < wordLength; i++) {
             const tile = document.getElementById(`tile-${rowToAnimate}-${i}`);
-            if (!tile || isSpaceTile(i)) continue;
+            if (!tile || isFixedTile(i)) continue;
 
             const letter = data.guess[i];
             const status = data.pattern[i];
@@ -410,10 +456,15 @@ function animateAndProcessResult(data) {
                 tile.classList.add('flip');
 
                 setTimeout(() => {
-                    tile.innerText = displayLetter;
-                    tile.classList.add(status);
-                    if (letter !== '-') {
-                        updateKeyStatus(letter, status);
+                    const isUnrevealedHintSlot = data.revealed_letters && displayLetter === '.' && status !== 'correct';
+
+                    if (isUnrevealedHintSlot) {
+                        tile.innerText = '';
+                        tile.classList.add('disabled-tile');
+                    } else {
+                        tile.innerText = displayLetter;
+                        tile.classList.add(status);
+                        updateKeyStatus(displayLetter, status);
                     }
                 }, FLIP_DURATION / 2);
 
@@ -425,7 +476,7 @@ function animateAndProcessResult(data) {
         setTimeout(() => {
             isAnimating = false;
 
-            const isWin = data.pattern.every((s, idx) => isSpaceTile(idx) || s === "correct");
+            const isWin = data.pattern.every((s, idx) => isFixedTile(idx) || s === "correct");
 
             if (isWin) {
                 gameOver = true;
@@ -457,7 +508,7 @@ function animateAndProcessResult(data) {
                 disableActionButtons();
                 openModal();
             } else {
-                currentGuess = Array(wordLength).fill("").map((_, i) => isSpaceTile(i) ? " " : "");
+                currentGuess = createEmptyGuessArray();
                 cursorIndex = getFirstValidIndex();
                 updateCurrentRow();
             }
@@ -546,6 +597,12 @@ function grayOutRemainingTiles() {
             if (isSpaceTile(c)) {
                 tile.className = "tile space-tile";
                 tile.innerText = "";
+                continue;
+            }
+
+            if (isHyphenTile(c)) {
+                tile.className = "tile hyphen-tile";
+                tile.innerText = "-";
                 continue;
             }
 
