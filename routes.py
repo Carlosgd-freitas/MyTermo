@@ -19,16 +19,24 @@ THEMES_DIR = Path(__file__).parent / "themes"
 PREFERRED_THEME_ORDER = [
     "classic",
     "dark",
-    "day",
-    "night",
-    "sunset",
+    "flame",
     "embers",
+    "lava",
+    "sunset",
+    "sunny",
+    "honey",
     "forest",
     "jungle",
     "mint",
     "deep-sea",
-    "cherry",
+    "day",
+    "night",
+    "lavender",
     "royal",
+    "cherry",
+    "jam",
+    "cloud",
+    "midnight",
 ]
 
 

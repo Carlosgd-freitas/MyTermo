@@ -1,18 +1,18 @@
 {
-    "id": "cherry",
+    "id": "sunny",
     "name": {
-        "en": "Cherry",
-        "pt": "Cereja"
+        "en": "Sunny",
+        "pt": "Ensolarado"
     },
     "colors": {
         "font-family": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        "bg-color": "#ffecf0",
-        "text-color": "#4a0b1f",
-        "tile-bg": "#fadce6",
-        "tile-border": "#e8648c",
+        "bg-color": "#fffbe6",
+        "text-color": "#4a3b00",
+        "tile-bg": "#fff2b3",
+        "tile-border": "#e6b800",
         "tile-border-selected": "#ffffff",
-        "tile-text": "#4a0b1f",
-        "key-bg": "#e8648c",
+        "tile-text": "#4a3b00",
+        "key-bg": "#e6b800",
         "key-text": "#ffffff",
         "btn-hint-bg": "#d3ad69",
         "btn-hint-text": "#ffffff",
@@ -20,10 +20,10 @@
         "btn-giveup-text": "#ffffff",
         "correct-bg": "#3aa394",
         "present-bg": "#d3ad69",
-        "absent-bg": "#9c838a",
-        "modal-bg": "#fadce6",
-        "modal-border": "#e8648c",
-        "dropdown-bg": "#e8648c",
+        "absent-bg": "#d9d2b8",
+        "modal-bg": "#fff2b3",
+        "modal-border": "#e6b800",
+        "dropdown-bg": "#e6b800",
         "dropdown-text": "#ffffff"
     }
 }

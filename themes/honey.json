@@ -1,29 +1,29 @@
 {
-    "id": "embers",
+    "id": "honey",
     "name": {
-        "en": "Embers",
-        "pt": "Brasas"
+        "en": "Honey",
+        "pt": "Mel"
     },
     "colors": {
         "font-family": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        "bg-color": "#2d0a13",
-        "text-color": "#ffe3e7",
-        "tile-bg": "#4a1523",
-        "tile-border": "#962d40",
+        "bg-color": "#1f1a0a",
+        "text-color": "#fcf6d9",
+        "tile-bg": "#3b3213",
+        "tile-border": "#806b1e",
         "tile-border-selected": "#ffffff",
         "tile-text": "#ffffff",
-        "key-bg": "#782333",
-        "key-text": "#ffe3e7",
+        "key-bg": "#806b1e",
+        "key-text": "#fcf6d9",
         "btn-hint-bg": "#d3ad69",
         "btn-hint-text": "#f0f0f0",
         "btn-giveup-bg": "#8b3a3a",
         "btn-giveup-text": "#f0f0f0",
         "correct-bg": "#3aa394",
         "present-bg": "#d3ad69",
-        "absent-bg": "#1c050b",
-        "modal-bg": "#4a1523",
-        "modal-border": "#962d40",
-        "dropdown-bg": "#4a1523",
+        "absent-bg": "#141106",
+        "modal-bg": "#3b3213",
+        "modal-border": "#806b1e",
+        "dropdown-bg": "#3b3213",
         "dropdown-text": "#ffffff"
     }
 }

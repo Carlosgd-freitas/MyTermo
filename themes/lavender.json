@@ -1,18 +1,18 @@
 {
-    "id": "cherry",
+    "id": "lavender",
     "name": {
-        "en": "Cherry",
-        "pt": "Cereja"
+        "en": "Lavender",
+        "pt": "Lavanda"
     },
     "colors": {
         "font-family": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        "bg-color": "#ffecf0",
-        "text-color": "#4a0b1f",
-        "tile-bg": "#fadce6",
-        "tile-border": "#e8648c",
+        "bg-color": "#f3e8fd",
+        "text-color": "#2b1055",
+        "tile-bg": "#e4d1f9",
+        "tile-border": "#9d72de",
         "tile-border-selected": "#ffffff",
-        "tile-text": "#4a0b1f",
-        "key-bg": "#e8648c",
+        "tile-text": "#2b1055",
+        "key-bg": "#9d72de",
         "key-text": "#ffffff",
         "btn-hint-bg": "#d3ad69",
         "btn-hint-text": "#ffffff",
@@ -20,10 +20,10 @@
         "btn-giveup-text": "#ffffff",
         "correct-bg": "#3aa394",
         "present-bg": "#d3ad69",
-        "absent-bg": "#9c838a",
-        "modal-bg": "#fadce6",
-        "modal-border": "#e8648c",
-        "dropdown-bg": "#e8648c",
+        "absent-bg": "#bba5d6",
+        "modal-bg": "#e4d1f9",
+        "modal-border": "#9d72de",
+        "dropdown-bg": "#9d72de",
         "dropdown-text": "#ffffff"
     }
 }

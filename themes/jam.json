@@ -1,29 +1,29 @@
 {
-    "id": "embers",
+    "id": "jam",
     "name": {
-        "en": "Embers",
-        "pt": "Brasas"
+        "en": "Jam",
+        "pt": "Geleia"
     },
     "colors": {
         "font-family": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        "bg-color": "#2d0a13",
-        "text-color": "#ffe3e7",
-        "tile-bg": "#4a1523",
-        "tile-border": "#962d40",
+        "bg-color": "#320a20",
+        "text-color": "#ffdaec",
+        "tile-bg": "#4f1635",
+        "tile-border": "#a8326d",
         "tile-border-selected": "#ffffff",
         "tile-text": "#ffffff",
-        "key-bg": "#782333",
-        "key-text": "#ffe3e7",
+        "key-bg": "#822654",
+        "key-text": "#ffdaec",
         "btn-hint-bg": "#d3ad69",
         "btn-hint-text": "#f0f0f0",
         "btn-giveup-bg": "#8b3a3a",
         "btn-giveup-text": "#f0f0f0",
         "correct-bg": "#3aa394",
         "present-bg": "#d3ad69",
-        "absent-bg": "#1c050b",
-        "modal-bg": "#4a1523",
-        "modal-border": "#962d40",
-        "dropdown-bg": "#4a1523",
+        "absent-bg": "#1c0512",
+        "modal-bg": "#4f1635",
+        "modal-border": "#a8326d",
+        "dropdown-bg": "#4f1635",
         "dropdown-text": "#ffffff"
     }
 }

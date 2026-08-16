@@ -1,18 +1,18 @@
 {
-    "id": "cherry",
+    "id": "lava",
     "name": {
-        "en": "Cherry",
-        "pt": "Cereja"
+        "en": "Lava",
+        "pt": "Lava"
     },
     "colors": {
         "font-family": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        "bg-color": "#ffecf0",
-        "text-color": "#4a0b1f",
-        "tile-bg": "#fadce6",
-        "tile-border": "#e8648c",
+        "bg-color": "#e29578",
+        "text-color": "#2b1810",
+        "tile-bg": "#f7d6c8",
+        "tile-border": "#b86b53",
         "tile-border-selected": "#ffffff",
-        "tile-text": "#4a0b1f",
-        "key-bg": "#e8648c",
+        "tile-text": "#2b1810",
+        "key-bg": "#b86b53",
         "key-text": "#ffffff",
         "btn-hint-bg": "#d3ad69",
         "btn-hint-text": "#ffffff",
@@ -20,10 +20,10 @@
         "btn-giveup-text": "#ffffff",
         "correct-bg": "#3aa394",
         "present-bg": "#d3ad69",
-        "absent-bg": "#9c838a",
-        "modal-bg": "#fadce6",
-        "modal-border": "#e8648c",
-        "dropdown-bg": "#e8648c",
+        "absent-bg": "#7a5c53",
+        "modal-bg": "#f7d6c8",
+        "modal-border": "#b86b53",
+        "dropdown-bg": "#b86b53",
         "dropdown-text": "#ffffff"
     }
 }

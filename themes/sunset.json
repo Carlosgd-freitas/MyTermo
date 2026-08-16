@@ -1,29 +1,29 @@
 {
     "id": "sunset",
     "name": {
-        "en": "Sunset",
-        "pt": "Pôr do Sol"
+        "en": "sunset",
+        "pt": "Sunset"
     },
     "colors": {
         "font-family": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        "bg-color": "#e29578",
-        "text-color": "#2b1810",
-        "tile-bg": "#f7d6c8",
-        "tile-border": "#b86b53",
+        "bg-color": "#291209",
+        "text-color": "#ffebd9",
+        "tile-bg": "#4f200c",
+        "tile-border": "#b84714",
         "tile-border-selected": "#ffffff",
-        "tile-text": "#2b1810",
-        "key-bg": "#b86b53",
-        "key-text": "#ffffff",
+        "tile-text": "#ffffff",
+        "key-bg": "#b84714",
+        "key-text": "#ffebd9",
         "btn-hint-bg": "#d3ad69",
-        "btn-hint-text": "#ffffff",
+        "btn-hint-text": "#f0f0f0",
         "btn-giveup-bg": "#8b3a3a",
-        "btn-giveup-text": "#ffffff",
+        "btn-giveup-text": "#f0f0f0",
         "correct-bg": "#3aa394",
         "present-bg": "#d3ad69",
-        "absent-bg": "#7a5c53",
-        "modal-bg": "#f7d6c8",
-        "modal-border": "#b86b53",
-        "dropdown-bg": "#b86b53",
+        "absent-bg": "#1c0d06",
+        "modal-bg": "#4f200c",
+        "modal-border": "#b84714",
+        "dropdown-bg": "#4f200c",
         "dropdown-text": "#ffffff"
     }
 }
