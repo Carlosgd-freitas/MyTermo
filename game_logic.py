@@ -65,7 +65,7 @@ def get_random_messages(*categories: str) -> dict:
 def evaluate_guess(
     guess: str, target_word: str, given_tiles: Optional[list[str]] = None
 ) -> tuple[list[str], list[str]]:
-    """Evaluate a guess against the target word following standard Wordle rules.
+    """Evaluate a guess against a target word following standard Wordle rules.
 
     Args:
         guess (str): User attempt word.

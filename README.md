@@ -31,5 +31,4 @@ The game ends if:
 # Planned Features
 * Automated Tests
 * Instructions button
-* Support for simulatenous games (guess N words at a time)
 * Optional "Theme" box

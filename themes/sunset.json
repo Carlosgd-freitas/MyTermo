@@ -10,6 +10,7 @@
         "text-color": "#2b1810",
         "tile-bg": "#f7d6c8",
         "tile-border": "#b86b53",
+        "tile-border-selected": "#ffffff",
         "tile-text": "#2b1810",
         "key-bg": "#b86b53",
         "key-text": "#ffffff",

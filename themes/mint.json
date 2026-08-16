@@ -1,18 +1,18 @@
 {
-    "id": "classic",
+    "id": "mint",
     "name": {
-        "en": "Classic",
-        "pt": "Clássico"
+        "en": "Mint",
+        "pt": "Menta"
     },
     "colors": {
         "font-family": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        "bg-color": "#6e5c62",
-        "text-color": "#ffffff",
-        "tile-bg": "#615458",
-        "tile-border": "#4c4347",
+        "bg-color": "#e0f7fa",
+        "text-color": "#004d40",
+        "tile-bg": "#b2ebf2",
+        "tile-border": "#4dd0e1",
         "tile-border-selected": "#ffffff",
-        "tile-text": "#ffffff",
-        "key-bg": "#4c4347",
+        "tile-text": "#004d40",
+        "key-bg": "#26c6da",
         "key-text": "#ffffff",
         "btn-hint-bg": "#d3ad69",
         "btn-hint-text": "#ffffff",
@@ -20,10 +20,10 @@
         "btn-giveup-text": "#ffffff",
         "correct-bg": "#3aa394",
         "present-bg": "#d3ad69",
-        "absent-bg": "#312a2c",
-        "modal-bg": "#615458",
-        "modal-border": "#4c4347",
-        "dropdown-bg": "#4c4347",
+        "absent-bg": "#90a4ae",
+        "modal-bg": "#b2ebf2",
+        "modal-border": "#4dd0e1",
+        "dropdown-bg": "#4dd0e1",
         "dropdown-text": "#ffffff"
     }
 }

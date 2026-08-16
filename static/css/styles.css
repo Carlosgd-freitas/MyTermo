@@ -3,7 +3,7 @@ body {
     color: var(--text-color, #ffffff);
     font-family: var(--font-family, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif);
     margin: 0;
-    padding: 20px 0;
+    padding: 10px 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -18,19 +18,21 @@ body {
     flex-direction: column;
     align-items: center;
     width: 100%;
-    max-width: 580px;
-    padding: 0 8px;
+    max-width: 100%;
+    padding: 0 12px;
+    gap: 4px;
     box-sizing: border-box;
 }
 
-/* Header Container & Alignment */
+/* Header & Navigation */
 .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: 10px 0;
-    margin-bottom: 12px;
+    max-width: 580px;
+    padding: 4px 0;
+    margin: 0;
 }
 
 .header-left, .header-right {
@@ -47,6 +49,13 @@ body {
     justify-content: flex-end;
 }
 
+.header-title-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
 #game-title {
     font-size: 2rem;
     font-weight: bold;
@@ -55,6 +64,17 @@ body {
     letter-spacing: 1.5px;
     text-align: center;
     white-space: nowrap;
+}
+
+.target-badge {
+    margin-top: 2px;
+    padding: 3px 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border-radius: 12px;
+    background-color: var(--tile-bg);
+    border: 1px solid var(--tile-border);
+    color: var(--text-color);
 }
 
 .icon-btn {
@@ -109,37 +129,64 @@ body {
     color: var(--dropdown-text, #ffffff);
 }
 
+/* Banner Messages */
 #message {
-    min-height: 28px;
     font-size: 1rem;
     font-weight: 600;
-    margin-bottom: 12px;
     text-align: center;
     padding: 0 16px;
+    margin: 2px 0;
 }
 
-/* Grid & Tiles */
+#message:empty {
+    display: none;
+}
+
+/* Unified Board Grid & Layout */
 #grid {
-    display: grid;
-    grid-template-rows: repeat(6, 1fr);
-    gap: 6px;
-    margin-bottom: 16px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    margin: 4px 0 8px 0;
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 4px 8px;
+}
+
+.board {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex-shrink: 0;
 }
 
 .row {
-    display: grid;
-    grid-template-columns: repeat(var(--word-length, 5), 1fr);
-    gap: 6px;
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
 }
 
+.board-divider {
+    width: 2px;
+    align-self: stretch;
+    background-color: var(--tile-border, #4c4347);
+    border-radius: 1px;
+    opacity: 0.6;
+    margin: 2px 0;
+}
+
+/* Tile Styles */
 .tile {
-    width: 52px;
-    height: 52px;
+    width: 44px;
+    height: 44px;
     border: 2px solid var(--tile-border);
     background-color: var(--tile-bg);
     border-radius: 4px;
     color: var(--tile-text);
-    font-size: 1.8rem;
+    font-size: 1.4rem;
     font-weight: bold;
     display: flex;
     align-items: center;
@@ -172,7 +219,7 @@ body {
 }
 
 .tile.active-cursor {
-    border-color: var(--tile-text);
+    border-color: var(--tile-border-selected, var(--tile-text));
     box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
 }
 
@@ -183,13 +230,6 @@ body {
     font-weight: bold;
     pointer-events: none;
     opacity: 0.85;
-}
-
-.tile.space-tile {
-    background-color: transparent;
-    border: none;
-    box-shadow: none;
-    pointer-events: none;
 }
 
 .tile.correct {
@@ -214,11 +254,11 @@ body {
     cursor: not-allowed;
 }
 
-/* Action Controls (Hint & Give Up) */
+/* Actions Controls (Hint & Give Up) */
 .actions {
     display: flex;
     gap: 10px;
-    margin-bottom: 15px;
+    margin: 2px 0 6px 0;
 }
 
 .actions button,
@@ -270,7 +310,7 @@ body {
     color: #88747a;
 }
 
-/* Keyboard */
+/* Virtual Keyboard */
 #keyboard {
     display: flex;
     flex-direction: column;
@@ -279,7 +319,7 @@ body {
     max-width: 580px;
     padding: 0 8px;
     box-sizing: border-box;
-    margin-bottom: 16px;
+    margin-bottom: 8px;
 }
 
 .keyboard-row {

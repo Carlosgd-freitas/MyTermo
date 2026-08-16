@@ -1,6 +1,6 @@
 """Game configuration parameters."""
 
 TITLE = "MyTermo"
-TARGET_WORD = "Termo"
-MAX_ATTEMPTS = 6
+TARGET = ["TERMO"]
+MAX_ATTEMPTS = 8
 GIVEN_TILES = [" ", "-"]
