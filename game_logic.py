@@ -1,16 +1,8 @@
 """Core game evaluation and text normalization logic."""
 
-import random
 import unicodedata
 from typing import Optional
 from config import GIVEN_TILES
-from messages import FAIL_MESSAGES, GIVE_UP_MESSAGES, VICTORY_MESSAGES
-
-MESSAGE_CATALOG = {
-    "victory": VICTORY_MESSAGES,
-    "fail": FAIL_MESSAGES,
-    "pity": GIVE_UP_MESSAGES,
-}
 
 
 def normalize_string(text: str) -> str:
@@ -39,27 +31,6 @@ def normalize_given_tiles(given_tiles: Optional[list[str]] = None) -> set[str]:
     """
     tiles = GIVEN_TILES if given_tiles is None else given_tiles
     return {normalize_string(t) for t in tiles}
-
-
-def get_random_messages(*categories: str) -> dict:
-    """Retrieve localized random messages for specified categories.
-
-    Args:
-        *categories (str): Message categories to pick from ('victory', 'fail', 'pity').
-
-    Returns:
-        dict: Localized message dictionary mapping requested category keys to language dicts,
-              or a single language dictionary if only one category is requested.
-    """
-    results = {}
-    for cat in categories:
-        pool = MESSAGE_CATALOG.get(cat)
-        if pool:
-            results[cat] = {lang: random.choice(msgs) for lang, msgs in pool.items()}
-
-    if len(categories) == 1:
-        return results.get(categories[0], {})
-    return results
 
 
 def evaluate_guess(

@@ -1,46 +1,3 @@
-const TRANSLATIONS = {
-    en: {
-        giveUp: "Give Up",
-        hint: "Hint",
-        langLabel: "Language",
-        themeBtn: "Theme",
-        selectTheme: "Select Theme",
-        absentLabel: "Absent",
-        presentLabel: "Present",
-        correctLabel: "Correct",
-        noHints: "No hints left!",
-        mustFill: (len) => `Fill all ${len} letters!`,
-        wordWas: "The word was:",
-        targetLabel: (count) => `${count} ${count === 1 ? 'Target' : 'Targets'}`,
-        modalTitles: {
-            win: "Victory!",
-            lose: "Game Over",
-            giveup: "Round Ended"
-        },
-        ok: "OK"
-    },
-    pt: {
-        giveUp: "Desistir",
-        hint: "Dica",
-        langLabel: "Linguagem",
-        themeBtn: "Tema",
-        selectTheme: "Selecionar Tema",
-        absentLabel: "Ausente",
-        presentLabel: "Presente",
-        correctLabel: "Correta",
-        noHints: "Sem dicas restantes!",
-        mustFill: (len) => `Preencha todas as ${len} letras!`,
-        wordWas: "A palavra era:",
-        targetLabel: (count) => `${count} ${count === 1 ? 'Alvo' : 'Alvos'}`,
-        modalTitles: {
-            win: "Vitória!",
-            lose: "Fim de Jogo",
-            giveup: "Fim da Rodada"
-        },
-        ok: "OK"
-    }
-};
-
 let currentLang = localStorage.getItem('termo_lang') || 'en';
 let currentThemeId = localStorage.getItem('termo_theme') || 'classic';
 let availableThemes = [];
@@ -152,7 +109,7 @@ async function initGame() {
         targets = config.targets || config.target || [];
         if (typeof targets === 'string') targets = [targets];
         
-        targetCount = config.target_count || targets.length || 1;
+        targetCount = config.target_count ?? targets.length ?? 1;
         maxAttempts = config.max_attempts;
 
         givenTiles = config.given_tiles || [];
@@ -168,7 +125,8 @@ async function initGame() {
 
         // Check if all targets are solved immediately by given tiles alone
         boardStates = Array.from({ length: targetCount }, (_, b) => {
-            const isSolved = targets[b].split('').every(char => givenTiles.includes(char));
+            const targetWord = targets[b] || "";
+            const isSolved = targetWord.length > 0 && targetWord.split('').every(char => givenTiles.includes(char));
             return { solved: isSolved, solvedAtAttempt: isSolved ? 0 : null };
         });
 
@@ -183,7 +141,7 @@ async function initGame() {
             gameOver = true;
             gameEndState = {
                 type: 'win',
-                messages: config.victory_messages
+                messageIndex: Math.floor(Math.random() * TRANSLATIONS[currentLang].winMessages.length)
             };
             grayOutRemainingTiles();
             updateUITexts();
@@ -258,6 +216,17 @@ function renderThemeModal() {
     });
 }
 
+/** Opens the Rules/Info modal window. */
+function openRulesModal() {
+    updateUITexts(); // Ensure texts are updated to current language before opening
+    document.getElementById('rules-modal').classList.add('active');
+}
+
+/** Closes the Rules/Info modal window. */
+function closeRulesModal() {
+    document.getElementById('rules-modal').classList.remove('active');
+}
+
 /** Updates application language state. */
 function changeLanguage(lang) {
     currentLang = lang;
@@ -277,6 +246,19 @@ function updateLangToggleUI() {
 
 /** Refreshes localized texts across active UI components and modals. */
 function updateUITexts() {
+    // 1. Circuit Breaker: If the file failed to load, stop before crashing.
+    if (typeof TRANSLATIONS === 'undefined') {
+        console.error("CRITICAL: translations.js failed to load!");
+        return; 
+    }
+
+    // 2. Fallback: If local storage has a corrupted language, default to English.
+    if (!TRANSLATIONS[currentLang]) {
+        console.warn(`Language '${currentLang}' not found, defaulting to 'en'`);
+        currentLang = 'en';
+        localStorage.setItem('termo_lang', 'en');
+    }
+
     const langLabel = document.getElementById('lang-label');
     if (langLabel) langLabel.textContent = TRANSLATIONS[currentLang].langLabel;
 
@@ -286,11 +268,32 @@ function updateUITexts() {
     const hintBtn = document.getElementById('hint-btn');
     if (hintBtn) hintBtn.innerText = TRANSLATIONS[currentLang].hint;
 
+    const infoBtn = document.getElementById('info-btn');
+    if (infoBtn) infoBtn.innerText = TRANSLATIONS[currentLang].info;
+
     const themeBtn = document.getElementById('theme-btn');
     if (themeBtn) themeBtn.innerText = TRANSLATIONS[currentLang].themeBtn;
 
     const themeModalTitle = document.getElementById('theme-modal-title');
     if (themeModalTitle) themeModalTitle.innerText = TRANSLATIONS[currentLang].selectTheme;
+
+    const rulesTitle = document.getElementById('rules-title');
+    if (rulesTitle) rulesTitle.innerText = TRANSLATIONS[currentLang].rules.title;
+    
+    const rulesDesc = document.getElementById('rules-desc');
+    if (rulesDesc) rulesDesc.innerText = TRANSLATIONS[currentLang].rules.desc;
+    
+    const rulesCorrect = document.getElementById('rules-correct-ex');
+    if (rulesCorrect) rulesCorrect.innerText = TRANSLATIONS[currentLang].rules.correct;
+    
+    const rulesPresent = document.getElementById('rules-present-ex');
+    if (rulesPresent) rulesPresent.innerText = TRANSLATIONS[currentLang].rules.present;
+    
+    const rulesAbsent = document.getElementById('rules-absent-ex');
+    if (rulesAbsent) rulesAbsent.innerText = TRANSLATIONS[currentLang].rules.absent;
+
+    const closeRulesBtn = document.getElementById('close-rules-btn');
+    if (closeRulesBtn) closeRulesBtn.innerText = TRANSLATIONS[currentLang].ok;
 
     const targetBadge = document.getElementById('target-badge');
     if (targetBadge) {
@@ -299,7 +302,8 @@ function updateUITexts() {
 
     if (gameEndState) {
         const t = TRANSLATIONS[currentLang];
-        const text = gameEndState.messages[currentLang];
+        const messagesList = t[`${gameEndState.type}Messages`];
+        const text = messagesList[gameEndState.messageIndex];
 
         document.getElementById('modal-title').innerText = t.modalTitles[gameEndState.type] || "";
         document.getElementById('modal-message').innerText = text;
@@ -313,7 +317,10 @@ function updateUITexts() {
             wordContainer.style.display = 'none';
         }
 
-        document.querySelector('.modal-close-btn').innerText = t.ok;
+        // Note: querySelectorAll ensures we catch the OK button on both modals
+        document.querySelectorAll('.modal-close-btn').forEach(btn => {
+            btn.innerText = t.ok;
+        });
 
         const modalEl = document.getElementById('endgame-modal');
         if (modalEl && modalEl.classList.contains('active')) {
@@ -667,7 +674,7 @@ function animateAndProcessResult(data) {
                 gameOver = true;
                 gameEndState = {
                     type: 'win',
-                    messages: data.victory_messages
+                    messageIndex: Math.floor(Math.random() * TRANSLATIONS[currentLang].winMessages.length)
                 };
                 clearMessage();
                 grayOutRemainingTiles();
@@ -685,7 +692,7 @@ function animateAndProcessResult(data) {
                 gameEndState = {
                     type: 'lose',
                     targetWord: data.target_word || (data.target_words ? data.target_words.join(', ') : ''),
-                    messages: data.fail_messages
+                    messageIndex: Math.floor(Math.random() * TRANSLATIONS[currentLang].loseMessages.length)
                 };
                 clearMessage();
                 grayOutRemainingTiles();
@@ -715,7 +722,7 @@ async function giveUp() {
     gameEndState = {
         type: 'giveup',
         targetWord: data.target_word,
-        messages: data.messages
+        messageIndex: Math.floor(Math.random() * TRANSLATIONS[currentLang].giveupMessages.length)
     };
 
     for (let b = 0; b < targetCount; b++) {
@@ -737,6 +744,9 @@ function disableActionButtons() {
 
     const hintBtn = document.getElementById('hint-btn');
     if (hintBtn) hintBtn.disabled = true;
+
+    const infoBtn = document.getElementById('info-btn');
+    if (infoBtn) infoBtn.disabled = true;
 }
 
 /** Updates keyboard key status colors based on status hierarchy. */

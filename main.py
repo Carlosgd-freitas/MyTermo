@@ -30,6 +30,12 @@ async def read_styles():
     return FileResponse(STATIC_DIR / "css" / "styles.css")
 
 
+@app.get("/translations.js")
+async def read_translations():
+    """Serve client translation dictionary."""
+    return FileResponse(STATIC_DIR / "js" / "translations.js")
+
+
 @app.get("/app.js")
 async def read_app():
     """Serve client application logic file."""

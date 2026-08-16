@@ -1,0 +1,90 @@
+const EN = {
+    giveUp: "Give Up",
+    hint: "Hint",
+    info: "Info",
+    langLabel: "Language",
+    themeBtn: "Theme",
+    selectTheme: "Select Theme",
+    noHints: "No hints left!",
+    mustFill: (len) => `Fill all ${len} letters!`,
+    wordWas: "The word was:",
+    targetLabel: (count) => `${count} ${count === 1 ? 'Target' : 'Targets'}`,
+    modalTitles: {
+        win: "Victory!",
+        lose: "Game Over",
+        giveup: "Round Ended"
+    },
+    ok: "OK",
+    winMessages: [
+        "Sensational! You guessed it!",
+        "Genius level! You nailed the word!",
+        "Mind blown! Spot on!",
+        "Masterpiece! You solved it like a pro!",
+    ],
+    loseMessages: [
+        "Game over! You ran out of attempts.",
+        "Better luck next time! The word got the best of you.",
+        "So close, yet so far! Out of tries.",
+        "Tough luck! The word was victorious today.",
+    ],
+    giveupMessages: [
+        "Bummer! Even the dictionary needed a coffee break after that.",
+        "Don't worry, words can be tricky sometimes!",
+        "So close! (Or maybe not that close...)",
+        "Giving up is a strategic decision! Ready for another round?",
+    ],
+    rules: {
+        title: "How to Play",
+        desc: "Guess the target word or phrase in the allowed attempts. After each guess, the tile colors will change to show how close you are.",
+        correct: "Is in the target and in the correct spot.",
+        present: "Is in the target but in the wrong spot.",
+        absent: "Is not in the target in any spot."
+    }
+};
+
+const PT = {
+    giveUp: "Desistir",
+    hint: "Dica",
+    info: "Info",
+    langLabel: "Idioma",
+    themeBtn: "Tema",
+    selectTheme: "Selecionar Tema",
+    noHints: "Sem dicas restantes!",
+    mustFill: (len) => `Preencha todas as ${len} letras!`,
+    wordWas: "A palavra era:",
+    targetLabel: (count) => `${count} ${count === 1 ? 'Alvo' : 'Alvos'}`,
+    modalTitles: {
+        win: "Vitória!",
+        lose: "Fim de Jogo",
+        giveup: "Fim da Rodada"
+    },
+    ok: "OK",
+    winMessages: [
+        "Sensacional! Você acertou!",
+        "Nível gênio! Você cravou a palavra!",
+        "Impressionante! Na mosca!",
+        "Obra-prima! Resolveu como um profissional!",
+    ],
+    loseMessages: [
+        "Fim de jogo! Suas tentativas acabaram.",
+        "Mais sorte na próxima! A palavra levou a melhor.",
+        "Tão perto, mas tão longe! Fim das tentativas.",
+        "Que azar! A palavra venceu hoje.",
+    ],
+    giveupMessages: [
+        "Que pena! Até o dicionário precisou de um café depois dessa.",
+        "Não se preocupe, as palavras são cheias de pegadinhas!",
+        "Foi quase! (Ou talvez não tão quase assim...)",
+        "Desistir também é uma decisão estratégica! Próxima rodada?",
+    ],
+    rules: {
+        title: "Como Jogar",
+        desc: "Adivinhe a palavra ou frase alvo nas tentativas permitidas. Após cada palpite, as cores mudarão para mostrar o quão perto você está.",
+        correct: "Está no alvo e na posição correta.",
+        present: "Está no alvo, mas na posição errada.",
+        absent: "Não está no alvo em nenhuma posição."
+    }
+};
+
+// Export to global scope for app.js
+const TRANSLATIONS = { en: EN, pt: PT };

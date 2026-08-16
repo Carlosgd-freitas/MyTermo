@@ -30,5 +30,10 @@ The game ends if:
 
 # Planned Features
 * Automated Tests
-* Instructions button
-* Optional "Theme" box
+* Optional "Subject" box
+
+- better space given tiles (e.g. "MY TERMO" can't differentiate a " ")
+- multiple targets is forced to have the same length. KEEP LIKE THAT! just enphasis in it, and on README too.
+- translate "space" on keyboard
+- hover tooltips
+- stucture overhaul

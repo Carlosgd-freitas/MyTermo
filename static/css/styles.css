@@ -302,6 +302,20 @@ body {
     border: 1px solid var(--tile-border);
 }
 
+#info-btn,
+.info-btn {
+    color: var(--btn-info-text, var(--key-text));
+    background-color: var(--btn-info-bg, var(--key-bg));
+    border: 1px solid var(--tile-border);
+}
+
+#info-btn:hover:not(:disabled),
+.info-btn:hover:not(:disabled) {
+    color: var(--btn-info-bg, var(--key-bg));
+    background-color: var(--btn-info-text, var(--key-text));
+    border: 1px solid var(--tile-border);
+}
+
 .actions button:disabled,
 .action-btn:disabled {
     opacity: 0.3;

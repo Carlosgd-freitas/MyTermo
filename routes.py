@@ -6,7 +6,6 @@ from fastapi import APIRouter
 from fastapi.responses import FileResponse
 from game_logic import (
     evaluate_guess,
-    get_random_messages,
     normalize_given_tiles,
     normalize_string,
 )
@@ -21,8 +20,8 @@ PREFERRED_THEME_ORDER = [
     "dark",
     "flame",
     "embers",
-    "lava",
     "sunset",
+    "lava",
     "sunny",
     "honey",
     "forest",
@@ -93,7 +92,6 @@ def get_config():
         "targets": target_norms,
         "max_attempts": MAX_ATTEMPTS,
         "given_tiles": given_set,
-        "victory_messages": get_random_messages("victory"),
     }
 
 
@@ -122,8 +120,6 @@ def check_guess(request: GuessRequest):
             "target_word": normalize_string(w),
         })
 
-    messages = get_random_messages("victory", "fail")
-
     return {
         "guess": guess,
         "target_length": target_len,
@@ -132,8 +128,6 @@ def check_guess(request: GuessRequest):
         "target_word": evaluations[0]["target_word"],
         "evaluations": evaluations,
         "target_words": target_norms,
-        "victory_messages": messages["victory"],
-        "fail_messages": messages["fail"],
     }
 
 
@@ -172,8 +166,6 @@ def get_hint(request: HintRequest):
             "target_word": normalize_string(w),
         })
 
-    messages = get_random_messages("victory", "fail")
-
     return {
         "guess": hint_word,
         "target_length": target_len,
@@ -182,8 +174,6 @@ def get_hint(request: HintRequest):
         "target_word": evaluations[0]["target_word"],
         "evaluations": evaluations,
         "target_words": target_norms,
-        "victory_messages": messages["victory"],
-        "fail_messages": messages["fail"],
         "hint_index": hint_idx,
     }
 
@@ -195,5 +185,4 @@ def give_up():
     return {
         "target_word": ", ".join(target_norms),
         "target_words": target_norms,
-        "messages": get_random_messages("pity"),
     }
