@@ -254,6 +254,57 @@ body {
     cursor: not-allowed;
 }
 
+/* Ensure the button can anchor the tooltip and WON'T clip it */
+button[data-tooltip] {
+    position: relative;
+    overflow: visible !important; /* Forces browsers not to chop off the popup */
+}
+
+/* The Tooltip Message Box */
+button[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--tile-border, #4c4347);
+    color: #ffffff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none; /* Relies on pointer-events instead of visibility */
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 1000; /* Bumped up to ensure it clears the game grid */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* The Little Triangle Arrow */
+button[data-tooltip]::before {
+    content: '';
+    position: absolute;
+    bottom: 105%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: var(--tile-border, #4c4347) transparent transparent transparent;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 1000;
+}
+
+/* Trigger the reveal on hover AND focus (for mobile/keyboard accessibility) */
+button[data-tooltip]:hover::after,
+button[data-tooltip]:hover::before,
+button[data-tooltip]:focus::after,
+button[data-tooltip]:focus::before {
+    opacity: 1;
+}
+
 /* Actions Controls (Hint & Give Up) */
 .actions {
     display: flex;

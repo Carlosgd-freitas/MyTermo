@@ -24,7 +24,7 @@ const letterStatuses = {};
 
 const KEYBOARD_LAYOUT = [
     ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
-    ["A", "S", "D", "F", "G", "H", "J", "K", "L", "-"],
+    ["A", "S", "D", "F", "G", "H", "J", "K", "L", "-", "&"],
     ["ENTER", "Z", "X", "C", "V", "SPACE", "B", "N", "M", "DEL"]
 ];
 
@@ -263,13 +263,25 @@ function updateUITexts() {
     if (langLabel) langLabel.textContent = TRANSLATIONS[currentLang].langLabel;
 
     const giveUpBtn = document.getElementById('giveup-btn');
-    if (giveUpBtn) giveUpBtn.innerText = TRANSLATIONS[currentLang].giveUp;
+    if (giveUpBtn) {
+        giveUpBtn.innerText = TRANSLATIONS[currentLang].giveUp;
+        giveUpBtn.removeAttribute('title'); 
+        giveUpBtn.setAttribute('data-tooltip', TRANSLATIONS[currentLang].giveUpTooltip);
+    }
 
     const hintBtn = document.getElementById('hint-btn');
-    if (hintBtn) hintBtn.innerText = TRANSLATIONS[currentLang].hint;
+    if (hintBtn) {
+        hintBtn.innerText = TRANSLATIONS[currentLang].hint;
+        hintBtn.removeAttribute('title');
+        hintBtn.setAttribute('data-tooltip', TRANSLATIONS[currentLang].hintTooltip);
+    }
 
     const infoBtn = document.getElementById('info-btn');
-    if (infoBtn) infoBtn.innerText = TRANSLATIONS[currentLang].info;
+    if (infoBtn) {
+        infoBtn.innerText = TRANSLATIONS[currentLang].info;
+        infoBtn.removeAttribute('title');
+        infoBtn.setAttribute('data-tooltip', TRANSLATIONS[currentLang].infoTooltip);
+    }
 
     const themeBtn = document.getElementById('theme-btn');
     if (themeBtn) themeBtn.innerText = TRANSLATIONS[currentLang].themeBtn;
@@ -294,6 +306,9 @@ function updateUITexts() {
 
     const closeRulesBtn = document.getElementById('close-rules-btn');
     if (closeRulesBtn) closeRulesBtn.innerText = TRANSLATIONS[currentLang].ok;
+
+    const spaceKey = document.getElementById('key-SPACE');
+    if (spaceKey) spaceKey.innerText = TRANSLATIONS[currentLang].spaceBtn;
 
     const targetBadge = document.getElementById('target-badge');
     if (targetBadge) {
@@ -444,7 +459,7 @@ function handlePhysicalKeyboard(e) {
             .replace(/[\u0300-\u036f]/g, "")
             .toUpperCase();
 
-        if (/^[A-Z\-]$/.test(normalizedKey)) {
+        if (/^[A-Z\-&]$/.test(normalizedKey)) {
             processInput(normalizedKey);
         }
     }
@@ -467,7 +482,7 @@ function processInput(key) {
             }
         }
         updateCurrentRow();
-    } else if (key === 'SPACE' || /^[A-Z\-]$/.test(key)) {
+    } else if (key === 'SPACE' || /^[A-Z\-&]$/.test(key)) {
         currentGuess[cursorIndex] = key === 'SPACE' ? ' ' : key;
         const nextIndex = getNextValidIndex(cursorIndex, 1);
         if (nextIndex > cursorIndex) {

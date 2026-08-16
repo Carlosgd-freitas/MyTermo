@@ -5,6 +5,7 @@ const EN = {
     langLabel: "Language",
     themeBtn: "Theme",
     selectTheme: "Select Theme",
+    spaceBtn: "SPACE",
     noHints: "No hints left!",
     mustFill: (len) => `Fill all ${len} letters!`,
     wordWas: "The word was:",
@@ -15,6 +16,9 @@ const EN = {
         giveup: "Round Ended"
     },
     ok: "OK",
+    infoTooltip: "How to play",
+    hintTooltip: "Reveal a correct letter",
+    giveUpTooltip: "Surrender and show the answer",
     winMessages: [
         "Sensational! You guessed it!",
         "Genius level! You nailed the word!",
@@ -49,6 +53,7 @@ const PT = {
     langLabel: "Idioma",
     themeBtn: "Tema",
     selectTheme: "Selecionar Tema",
+    spaceBtn: "ESPAÇO",
     noHints: "Sem dicas restantes!",
     mustFill: (len) => `Preencha todas as ${len} letras!`,
     wordWas: "A palavra era:",
@@ -59,6 +64,9 @@ const PT = {
         giveup: "Fim da Rodada"
     },
     ok: "OK",
+    infoTooltip: "Como jogar",
+    hintTooltip: "Revelar uma letra correta",
+    giveUpTooltip: "Desistir e mostrar a resposta",
     winMessages: [
         "Sensacional! Você acertou!",
         "Nível gênio! Você cravou a palavra!",
