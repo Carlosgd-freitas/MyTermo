@@ -25,7 +25,7 @@ const letterStatuses = {};
 const KEYBOARD_LAYOUT = [
     ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
     ["A", "S", "D", "F", "G", "H", "J", "K", "L", "-", "&"],
-    ["ENTER", "Z", "X", "C", "V", "SPACE", "B", "N", "M", "DEL"]
+    ["ENTER", "Z", "X", "C", "V", " ", "B", "N", "M", "DEL"]
 ];
 
 const STATUS_PRIORITY = { "correct": 3, "present": 2, "absent": 1 };
@@ -38,22 +38,35 @@ function isGivenTile(boardIdx, colIdx) {
     return false;
 }
 
+/** Checks if a column is populated by given tiles across ALL active target boards. */
+function isSkippableColumn(colIdx) {
+    if (!boardStates || boardStates.length === 0) return false;
+    
+    const activeBoards = boardStates
+        .map((state, index) => ({ state, index }))
+        .filter(b => !b.state.solved);
+        
+    if (activeBoards.length === 0) return true; 
+    
+    return activeBoards.every(b => isGivenTile(b.index, colIdx));
+}
+
 /** Finds the first editable tile index in the word row. */
 function getFirstValidIndex() {
+    for (let i = 0; i < wordLength; i++) {
+        if (!isSkippableColumn(i)) return i;
+    }
     return 0;
 }
 
-/** Finds the last editable tile index in the word row. */
-function getLastValidIndex() {
-    return wordLength - 1;
-}
-
-/** Calculates the next editable cursor position in a given direction. */
+/** Calculates the next editable cursor position in a given direction, skipping given tiles. */
 function getNextValidIndex(fromIndex, direction) {
     let idx = fromIndex + direction;
-    if (idx < 0) return 0;
-    if (idx >= wordLength) return wordLength - 1;
-    return idx;
+    while (idx >= 0 && idx < wordLength) {
+        if (!isSkippableColumn(idx)) return idx;
+        idx += direction;
+    }
+    return fromIndex; // Stay in place if hitting the edge
 }
 
 /** Retrieves tile DOM element for a specific board, row, and column index. */
@@ -115,28 +128,42 @@ async function initGame() {
         givenTiles = config.given_tiles || [];
         correctIndices = new Set();
 
-        currentGuess = createEmptyGuessArray();
-        cursorIndex = getFirstValidIndex();
-
         document.documentElement.style.setProperty('--word-length', wordLength);
 
         updateLangToggleUI();
         updateUITexts();
 
-        // Check if all targets are solved immediately by given tiles alone
         boardStates = Array.from({ length: targetCount }, (_, b) => {
             const targetWord = targets[b] || "";
             const isSolved = targetWord.length > 0 && targetWord.split('').every(char => givenTiles.includes(char));
             return { solved: isSolved, solvedAtAttempt: isSolved ? 0 : null };
         });
 
+        currentGuess = createEmptyGuessArray();
+        cursorIndex = getFirstValidIndex();
+
         buildGrid();
         buildKeyboard();
-        updateCurrentRow();
 
+        // Mark given characters that don't appear in ANY target as absent
+        givenTiles.forEach(char => {
+            const inAnyTarget = targets.some(t => t.includes(char));
+            if (!inAnyTarget) {
+                updateKeyStatus(char, 'absent');
+            }
+        });
+
+        updateCurrentRow();
+        
+        // Restore physical keyboard listener
         document.addEventListener('keydown', handlePhysicalKeyboard);
 
-        // Immediate victory if boards are fully pre-populated
+        isAnimating = true;
+        await revealGivenTilesForRow(0);
+        isAnimating = false;
+        
+        updateCurrentRow();
+
         if (boardStates.every(b => b.solved)) {
             gameOver = true;
             gameEndState = {
@@ -146,12 +173,61 @@ async function initGame() {
             grayOutRemainingTiles();
             updateUITexts();
             disableActionButtons();
-            openModal();
+            
+            setTimeout(() => {
+                openModal();
+            }, wordLength * 150 + 600);
         }
 
     } catch (e) {
         console.error("Failed to initialize game config", e);
     }
+}
+
+/** Animates given tiles strictly for a specified row across active boards. */
+function revealGivenTilesForRow(rowIdx) {
+    return new Promise((resolve) => {
+        let hasGivenTiles = false;
+        let maxDelay = 0;
+
+        for (let b = 0; b < targetCount; b++) {
+            if (boardStates[b] && boardStates[b].solved) continue;
+            
+            for (let c = 0; c < wordLength; c++) {
+                if (isGivenTile(b, c)) {
+                    hasGivenTiles = true;
+                    const tile = getTileElement(b, rowIdx, c);
+                    if (!tile) continue;
+                    
+                    tile.dataset.revealing = "true";
+                    
+                    const char = targets[b][c];
+                    const delay = c * 150;
+                    if (delay > maxDelay) maxDelay = delay;
+
+                    setTimeout(() => {
+                        tile.classList.add('flip');
+                        
+                        setTimeout(() => {
+                            tile.innerText = char;
+                            tile.classList.add('correct', 'given-tile');
+                            
+                            updateKeyStatus(char, 'correct');
+                            
+                            delete tile.dataset.revealing;
+                            tile.dataset.flipped = "true";
+                        }, 250); 
+                    }, delay);
+                }
+            }
+        }
+
+        if (hasGivenTiles) {
+            setTimeout(() => resolve(), maxDelay + 500);
+        } else {
+            resolve();
+        }
+    });
 }
 
 /** Opens theme selector modal window. */
@@ -218,7 +294,7 @@ function renderThemeModal() {
 
 /** Opens the Rules/Info modal window. */
 function openRulesModal() {
-    updateUITexts(); // Ensure texts are updated to current language before opening
+    updateUITexts(); 
     document.getElementById('rules-modal').classList.add('active');
 }
 
@@ -246,13 +322,11 @@ function updateLangToggleUI() {
 
 /** Refreshes localized texts across active UI components and modals. */
 function updateUITexts() {
-    // 1. Circuit Breaker: If the file failed to load, stop before crashing.
     if (typeof TRANSLATIONS === 'undefined') {
         console.error("CRITICAL: translations.js failed to load!");
         return; 
     }
 
-    // 2. Fallback: If local storage has a corrupted language, default to English.
     if (!TRANSLATIONS[currentLang]) {
         console.warn(`Language '${currentLang}' not found, defaulting to 'en'`);
         currentLang = 'en';
@@ -332,7 +406,6 @@ function updateUITexts() {
             wordContainer.style.display = 'none';
         }
 
-        // Note: querySelectorAll ensures we catch the OK button on both modals
         document.querySelectorAll('.modal-close-btn').forEach(btn => {
             btn.innerText = t.ok;
         });
@@ -380,14 +453,8 @@ function buildGrid() {
                 tile.id = `tile-${b}-${r}-${c}`;
                 tile.className = 'tile';
 
-                // Future rows highlight given tiles. (updateCurrentRow clears this for the active row)
-                if (isGivenTile(b, c)) {
-                    tile.classList.add('correct');
-                    tile.innerText = targets[b][c];
-                }
-
                 tile.addEventListener('click', () => {
-                    if (!gameOver && r === currentAttempt) {
+                    if (!gameOver && r === currentAttempt && !isSkippableColumn(c)) {
                         cursorIndex = c;
                         updateCurrentRow();
                     }
@@ -414,11 +481,13 @@ function buildKeyboard() {
             const button = document.createElement('button');
             button.className = 'key';
             button.innerText = keyText;
-            button.id = `key-${keyText}`;
+            
+            // Preserve valid DOM ID syntax while using literal space for logic
+            button.id = keyText === ' ' ? 'key-SPACE' : `key-${keyText}`; 
 
             if (keyText === 'ENTER' || keyText === 'DEL') {
                 button.classList.add('large');
-            } else if (keyText === 'SPACE') {
+            } else if (keyText === ' ') { 
                 button.classList.add('space-bar-key');
             }
 
@@ -445,8 +514,6 @@ function handlePhysicalKeyboard(e) {
         processInput('ENTER');
     } else if (e.key === 'Backspace' || e.key === 'Delete') {
         processInput('DEL');
-    } else if (e.key === ' ' || e.code === 'Space') {
-        processInput('SPACE');
     } else if (e.key === 'ArrowLeft') {
         cursorIndex = getNextValidIndex(cursorIndex, -1);
         updateCurrentRow();
@@ -459,7 +526,8 @@ function handlePhysicalKeyboard(e) {
             .replace(/[\u0300-\u036f]/g, "")
             .toUpperCase();
 
-        if (/^[A-Z\-&]$/.test(normalizedKey)) {
+        // Include a space character inside the regex bracket[cite: 45]
+        if (/^[A-Z\-& ]$/.test(normalizedKey)) { 
             processInput(normalizedKey);
         }
     }
@@ -482,8 +550,8 @@ function processInput(key) {
             }
         }
         updateCurrentRow();
-    } else if (key === 'SPACE' || /^[A-Z\-&]$/.test(key)) {
-        currentGuess[cursorIndex] = key === 'SPACE' ? ' ' : key;
+    } else if (/^[A-Z\-& ]$/.test(key)) { // Accept space natively[cite: 45]
+        currentGuess[cursorIndex] = key;
         const nextIndex = getNextValidIndex(cursorIndex, 1);
         if (nextIndex > cursorIndex) {
             cursorIndex = nextIndex;
@@ -500,22 +568,34 @@ function updateCurrentRow() {
         for (let c = 0; c < wordLength; c++) {
             const tile = getTileElement(b, currentAttempt, c);
             if (!tile) continue;
+            
+            if (tile.dataset.revealing === "true") continue;
 
             const typedLetter = currentGuess[c] || "";
-            
-            // The tile's visual character is firmly locked to the given tile if it exists for this specific board.
-            // This prevents the shared typing buffer from incorrectly overriding visual target characters across boards.
-            const displayChar = isGivenTile(b, c) ? targets[b][c] : typedLetter;
+            const isGiven = isGivenTile(b, c);
+            const displayChar = isGiven ? targets[b][c] : typedLetter;
 
-            tile.innerText = displayChar;
+            const hadFlip = tile.classList.contains('flip');
             tile.className = "tile";
+            if (hadFlip) tile.classList.add('flip');
 
-            if (displayChar !== '') {
-                tile.classList.add('filled');
-            }
+            if (isGiven) {
+                if (tile.dataset.flipped === "true") {
+                    tile.innerText = displayChar;
+                    tile.classList.add('correct', 'given-tile');
+                } else {
+                    tile.innerText = "";
+                }
+            } else {
+                tile.innerText = displayChar;
 
-            if (c === cursorIndex && !gameOver) {
-                tile.classList.add('active-cursor');
+                if (displayChar !== '') {
+                    tile.classList.add('filled');
+                }
+
+                if (c === cursorIndex && !gameOver) {
+                    tile.classList.add('active-cursor');
+                }
             }
         }
     }
@@ -560,13 +640,24 @@ async function submitGuess() {
 
     clearMessage();
 
-    if (currentGuess.some(char => char === "")) {
+    let fullGuessArray = [];
+    for (let i = 0; i < wordLength; i++) {
+        if (isSkippableColumn(i)) {
+            const activeBoard = boardStates.find(b => !b.solved) || boardStates[0];
+            const boardIdx = boardStates.indexOf(activeBoard);
+            fullGuessArray[i] = targets[boardIdx][i];
+        } else {
+            fullGuessArray[i] = currentGuess[i];
+        }
+    }
+
+    if (fullGuessArray.some(char => char === undefined || char === null || char === "")) {
         showMessage(TRANSLATIONS[currentLang].mustFill(wordLength));
         return;
     }
 
     isAnimating = true;
-    const wordToSubmit = currentGuess.join("");
+    const wordToSubmit = fullGuessArray.join("");
 
     try {
         const response = await fetch('/api/guess', {
@@ -605,7 +696,6 @@ function animateAndProcessResult(data) {
         const STAGGER_DELAY = 250;
         const evaluations = data.evaluations || [data];
 
-        // Pass 1: Sanitize evaluations
         for (let b = 0; b < targetCount; b++) {
             if (boardStates[b] && boardStates[b].solved) continue;
             const evalData = evaluations[b] || evaluations[0];
@@ -614,8 +704,6 @@ function animateAndProcessResult(data) {
                 const backendChar = (evalData.guess && evalData.guess[i]) || (data.guess && data.guess[i]);
                 const letter = currentGuess[i] || backendChar || "";
 
-                // If it's a locked given tile for THIS board, it's inherently correct. 
-                // Skip the false victory sanitization demotion.
                 if (!isGivenTile(b, i)) {
                     if (evalData.pattern[i] === 'correct' && letter !== targets[b][i]) {
                         evalData.pattern[i] = targets[b].includes(letter) ? 'present' : 'absent';
@@ -626,7 +714,6 @@ function animateAndProcessResult(data) {
             }
         }
 
-        // Pass 2: Execute flip animations
         for (let b = 0; b < targetCount; b++) {
             if (boardStates[b] && boardStates[b].solved) continue;
             const evalData = evaluations[b] || evaluations[0];
@@ -635,16 +722,13 @@ function animateAndProcessResult(data) {
                 const tile = getTileElement(b, rowToAnimate, i);
                 if (!tile) continue; 
 
+                if (isGivenTile(b, i)) continue;
+
                 const backendChar = (evalData.guess && evalData.guess[i]) || (data.guess && data.guess[i]);
                 let displayLetter = currentGuess[i] || 
                     (evalData.revealed_letters && evalData.revealed_letters[i]) || 
                     backendChar || 
                     "";
-
-                // Ensure it flips to reveal its strictly mapped given character
-                if (isGivenTile(b, i)) {
-                    displayLetter = targets[b][i];
-                }
 
                 const status = evalData.pattern[i];
 
@@ -670,7 +754,7 @@ function animateAndProcessResult(data) {
 
         const totalAnimationTime = (wordLength - 1) * STAGGER_DELAY + FLIP_DURATION;
 
-        setTimeout(() => {
+        setTimeout(async () => {
             isAnimating = false;
 
             evaluations.forEach((evalData, b) => {
@@ -714,12 +798,18 @@ function animateAndProcessResult(data) {
                 updateUITexts();
                 disableActionButtons();
                 openModal();
+                resolve();
             } else {
                 currentGuess = createEmptyGuessArray();
                 cursorIndex = getFirstValidIndex();
+                
+                isAnimating = true;
+                await revealGivenTilesForRow(currentAttempt);
+                isAnimating = false;
+                
                 updateCurrentRow();
+                resolve();
             }
-            resolve();
         }, totalAnimationTime);
     });
 }
@@ -766,15 +856,15 @@ function disableActionButtons() {
 
 /** Updates keyboard key status colors based on status hierarchy. */
 function updateKeyStatus(letter, newStatus) {
-    // Exclude spaces, hyphens and any structurally given tiles from keyboard styling logic
-    if (!letter || letter === ' ' || givenTiles.includes(letter)) return; 
-
-    const currentStatus = letterStatuses[letter];
+    if (!letter) return; 
+    
+    const keyId = letter === ' ' ? 'SPACE' : letter;
+    const currentStatus = letterStatuses[keyId];
 
     if (!currentStatus || STATUS_PRIORITY[newStatus] > STATUS_PRIORITY[currentStatus]) {
-        letterStatuses[letter] = newStatus;
+        letterStatuses[keyId] = newStatus;
         
-        const keyBtn = document.getElementById(`key-${letter}`);
+        const keyBtn = document.getElementById(`key-${keyId}`);
         if (keyBtn) {
             keyBtn.classList.remove('correct', 'present', 'absent');
             keyBtn.classList.add(newStatus);
@@ -817,8 +907,8 @@ function grayOutRemainingTiles() {
 
                 tile.classList.remove('active-cursor');
 
-                if (isGivenTile(b, c)) {
-                    tile.className = "tile correct";
+                if (isGivenTile(b, c) && r <= currentAttempt) {
+                    tile.className = "tile correct given-tile";
                     tile.innerText = targets[b][c];
                     continue;
                 }

@@ -6,17 +6,10 @@ from config import GIVEN_TILES
 
 
 def normalize_string(text: str) -> str:
-    """Strip accents and diacritics from text while preserving hyphens and spaces.
-
-    Args:
-        text (str): Raw input string.
-
-    Returns:
-        str: Uppercase normalized string without accents.
-    """
+    """Strip accents and diacritics from text while preserving hyphens and spaces."""
     nfkd = unicodedata.normalize("NFD", text)
     cleaned = "".join([c for c in nfkd if not unicodedata.combining(c)])
-    return cleaned.upper().strip()
+    return cleaned.upper()
 
 
 def normalize_given_tiles(given_tiles: Optional[list[str]] = None) -> set[str]:
