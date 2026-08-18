@@ -24,7 +24,9 @@ Examples:
     * `TARGET = ["BERRY", "JUICE"]` -> Valid multiple *targets*
 2. Define the maximum number of attempts through `MAX_ATTEMPTS` at [`src/config.py`](src/config.py).
 3. Define the characters given before each guess attempt through `GIVEN_TILES` at [`src/config.py`](src/config.py). Tiles containing given characters can't be overwritten by players. If the game has multiple *targets*, each *target* must have its given tiles in the same positions.
-4. **(OPTIONAL)** Define either or both subject hint text and image through `SUBJECT` at [`src/config.py`](src/config.py), and [`subject.jpg`](subject.jpg), respectively.
+4. Define the subject hint settings:
+   * The subject text can be defined through `SUBJECT` at [`src/config.py`](src/config.py). To disable it, set it to `None` (e.g. `SUBJECT = None`).
+   * The subject image is defined as [`subject.jpg`](subject.jpg). To disable it, rename or delete that file.
 5. Open the terminal at the project root and execute `uvicorn src.main:app --reload`. The application can be closed by pressing **CTRL+C** at the terminal or by closing the later.
 6. In a browser, enter the address `http://localhost:8000`.
 
@@ -34,10 +36,13 @@ Examples:
 3. New and existing themes can be added directly or edited at the `/themes` directory.
 4. Browser tab favicon can be changed through `favicon.ico`.
 
-# Modifying the project
-Before modifying the code of **MyTermo** for the first time, some steps need to be done a single time:
-1. Install `npm`.
-2. Use the configured code linting and formatting packages on commits by executing `pre-commit install`.
+# Extended Setup
+1. Follow the steps for **Setup**
+2. Install `npm`.
+3. Install `playwright`.
+4. To use the configured code linting and formatting packages on commits, execute `pre-commit install`.
 
-# Planned Features
-* Automated Tests
+# Automated Testing
+1. Follow the steps for **Extended Setup**
+2. In one terminal, run the application in a browser.
+3. In another terminal, execute `pytest` at the project root.
