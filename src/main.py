@@ -4,13 +4,18 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from routes import router
+
+# Updated router import
+from src.api.routes import router
 
 app = FastAPI()
 
-BASE_DIR = Path(__file__).resolve().parent
+# Resolve the root directory by stepping up two levels
+BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = BASE_DIR / "static"
 THEMES_DIR = BASE_DIR / "themes"
+
+app.mount("/js", StaticFiles(directory=STATIC_DIR / "js"), name="js")
 
 if THEMES_DIR.exists():
     app.mount("/themes", StaticFiles(directory=THEMES_DIR), name="themes")

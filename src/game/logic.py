@@ -2,7 +2,7 @@
 
 import unicodedata
 from typing import Optional
-from config import GIVEN_TILES
+from src.config import GIVEN_TILES
 
 
 def normalize_string(text: str) -> str:

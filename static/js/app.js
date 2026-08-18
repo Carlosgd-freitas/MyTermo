@@ -1,3 +1,13 @@
+// static/js/app.js
+
+import { fetchThemes, fetchConfig, fetchHintAPI, submitGuessAPI, giveUpAPI } from './api.js';
+import { 
+  getTileElement, applyTheme, renderThemeModal, openThemeModal, closeThemeModal, 
+  openRulesModal, closeRulesModal, openModal, closeModal, updateLangToggleUI, 
+  updateUITexts, buildGrid, buildKeyboard, disableActionButtons, 
+  updateKeyStatus, showMessage, clearMessage 
+} from './ui.js';
+
 let currentLang = localStorage.getItem("termo_lang") || "en";
 let currentThemeId = localStorage.getItem("termo_theme") || "classic";
 let availableThemes = [];
@@ -14,23 +24,11 @@ let gameOver = false;
 let gameEndState = null;
 
 let isAnimating = false;
-let messageTimeout = null;
 
 let givenTiles = [];
 let correctIndices = new Set();
 let boardStates = [];
 
-const letterStatuses = {};
-
-const KEYBOARD_LAYOUT = [
-  ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
-  ["A", "S", "D", "F", "G", "H", "J", "K", "L", "-", "&"],
-  ["ENTER", "Z", "X", "C", "V", " ", "B", "N", "M", "DEL"],
-];
-
-const STATUS_PRIORITY = { correct: 3, present: 2, absent: 1 };
-
-/** Checks if a specific tile position on a specific board contains a given tile character. */
 function isGivenTile(boardIdx, colIdx) {
   if (targets[boardIdx] && targets[boardIdx][colIdx]) {
     return givenTiles.includes(targets[boardIdx][colIdx]);
@@ -38,7 +36,6 @@ function isGivenTile(boardIdx, colIdx) {
   return false;
 }
 
-/** Checks if a column is populated by given tiles across ALL active target boards. */
 function isSkippableColumn(colIdx) {
   if (!boardStates || boardStates.length === 0) return false;
 
@@ -51,7 +48,6 @@ function isSkippableColumn(colIdx) {
   return activeBoards.every((b) => isGivenTile(b.index, colIdx));
 }
 
-/** Finds the first editable tile index in the word row. */
 function getFirstValidIndex() {
   for (let i = 0; i < wordLength; i++) {
     if (!isSkippableColumn(i)) return i;
@@ -59,63 +55,40 @@ function getFirstValidIndex() {
   return 0;
 }
 
-/** Calculates the next editable cursor position in a given direction, skipping given tiles. */
 function getNextValidIndex(fromIndex, direction) {
   let idx = fromIndex + direction;
   while (idx >= 0 && idx < wordLength) {
     if (!isSkippableColumn(idx)) return idx;
     idx += direction;
   }
-  return fromIndex; // Stay in place if hitting the edge
+  return fromIndex;
 }
 
-/** Retrieves tile DOM element for a specific board, row, and column index. */
-function getTileElement(boardIdx, rowIdx, colIdx) {
-  return document.getElementById(`tile-${boardIdx}-${rowIdx}-${colIdx}`);
-}
-
-/** Generates a completely empty guess buffer array. */
 function createEmptyGuessArray() {
   return Array(wordLength).fill("");
 }
 
-/** Applies theme CSS root variables directly to document element. */
-function applyTheme(theme) {
-  if (!theme || !theme.colors) return;
-
-  currentThemeId = theme.id;
-  localStorage.setItem("termo_theme", currentThemeId);
-
-  const root = document.documentElement;
-  Object.entries(theme.colors).forEach(([key, value]) => {
-    root.style.setProperty(`--${key}`, value);
-  });
+function handleThemeSelection(theme) {
+  currentThemeId = applyTheme(theme);
+  renderThemeModal(availableThemes, currentThemeId, currentLang, handleThemeSelection);
 }
 
-/** Initializes game session, loads remote configuration and sets initial state. */
 async function initGame() {
   clearMessage();
 
   try {
-    const themeRes = await fetch("/api/themes");
-    if (themeRes.ok) {
-      availableThemes = await themeRes.json();
-
-      const activeTheme =
-        availableThemes.find((t) => t.id === currentThemeId) ||
-        availableThemes[0];
-      if (activeTheme) {
-        applyTheme(activeTheme);
-      }
-      renderThemeModal();
+    availableThemes = await fetchThemes();
+    const activeTheme = availableThemes.find((t) => t.id === currentThemeId) || availableThemes[0];
+    if (activeTheme) {
+      currentThemeId = applyTheme(activeTheme);
     }
+    renderThemeModal(availableThemes, currentThemeId, currentLang, handleThemeSelection);
   } catch (e) {
     console.error("Failed to fetch themes from /api/themes", e);
   }
 
   try {
-    const res = await fetch("/api/config");
-    const config = await res.json();
+    const config = await fetchConfig();
 
     document.title = config.title;
     document.getElementById("game-title").innerText = config.title;
@@ -132,24 +105,21 @@ async function initGame() {
 
     document.documentElement.style.setProperty("--word-length", wordLength);
 
-    updateLangToggleUI();
-    updateUITexts();
+    updateLangToggleUI(currentLang);
+    refreshUI();
 
     boardStates = Array.from({ length: targetCount }, (_, b) => {
       const targetWord = targets[b] || "";
-      const isSolved =
-        targetWord.length > 0 &&
-        targetWord.split("").every((char) => givenTiles.includes(char));
+      const isSolved = targetWord.length > 0 && targetWord.split("").every((char) => givenTiles.includes(char));
       return { solved: isSolved, solvedAtAttempt: isSolved ? 0 : null };
     });
 
     currentGuess = createEmptyGuessArray();
     cursorIndex = getFirstValidIndex();
 
-    buildGrid();
-    buildKeyboard();
+    buildGrid(targetCount, maxAttempts, wordLength, handleTileClick);
+    buildKeyboard(processInput);
 
-    // Mark given characters that don't appear in ANY target as absent
     givenTiles.forEach((char) => {
       const inAnyTarget = targets.some((t) => t.includes(char));
       if (!inAnyTarget) {
@@ -159,7 +129,6 @@ async function initGame() {
 
     updateCurrentRow();
 
-    // Restore physical keyboard listener
     document.addEventListener("keydown", handlePhysicalKeyboard);
 
     isAnimating = true;
@@ -172,27 +141,38 @@ async function initGame() {
       gameOver = true;
       gameEndState = {
         type: "win",
-        messageIndex: Math.floor(
-          Math.random() * TRANSLATIONS[currentLang].winMessages.length,
-        ),
+        messageIndex: Math.floor(Math.random() * TRANSLATIONS[currentLang].winMessages.length),
       };
       grayOutRemainingTiles();
-      updateUITexts();
+      refreshUI();
       disableActionButtons();
 
-      setTimeout(
-        () => {
-          openModal();
-        },
-        wordLength * 150 + 600,
-      );
+      setTimeout(() => openModal(), wordLength * 150 + 600);
     }
   } catch (e) {
     console.error("Failed to initialize game config", e);
   }
 }
 
-/** Animates given tiles strictly for a specified row across active boards. */
+function handleTileClick(r, c) {
+  if (!gameOver && r === currentAttempt && !isSkippableColumn(c)) {
+    cursorIndex = c;
+    updateCurrentRow();
+  }
+}
+
+function refreshUI() {
+    updateUITexts(currentLang, targetCount, gameEndState, openModal);
+}
+
+function changeLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem("termo_lang", lang);
+  updateLangToggleUI(currentLang);
+  refreshUI();
+  renderThemeModal(availableThemes, currentThemeId, currentLang, handleThemeSelection);
+}
+
 function revealGivenTilesForRow(rowIdx) {
   return new Promise((resolve) => {
     let hasGivenTiles = false;
@@ -238,289 +218,6 @@ function revealGivenTilesForRow(rowIdx) {
   });
 }
 
-/** Opens theme selector modal window. */
-function openThemeModal() {
-  renderThemeModal();
-  document.getElementById("theme-modal").classList.add("active");
-}
-
-/** Closes theme selector modal window. */
-function closeThemeModal() {
-  document.getElementById("theme-modal").classList.remove("active");
-}
-
-/** Renders cards inside theme modal based on configured themes. */
-function renderThemeModal() {
-  const themeGrid = document.getElementById("theme-grid");
-  if (!themeGrid) return;
-
-  themeGrid.innerHTML = "";
-
-  availableThemes.forEach((theme) => {
-    const colors = theme.colors || {};
-
-    const bg = colors["bg-color"] || colors.bg;
-    const text = colors["text-color"] || colors.text;
-    const absent = colors["absent-bg"] || colors.absent;
-    const present = colors["present-bg"] || colors.present;
-    const correct = colors["correct-bg"] || colors.correct;
-    const border = colors["tile-border"] || colors["modal-border"] || "#4c4347";
-
-    const card = document.createElement("div");
-    card.className = `theme-card ${theme.id === currentThemeId ? "active" : ""}`;
-
-    card.style.setProperty("--p-bg", bg);
-    card.style.setProperty("--p-text", text);
-    card.style.setProperty("--p-absent", absent);
-    card.style.setProperty("--p-present", present);
-    card.style.setProperty("--p-correct", correct);
-    card.style.setProperty("--tile-border", border);
-
-    const langSelect = document.getElementById("lang-select");
-    const lang = langSelect ? langSelect.value : currentLang;
-    const themeName =
-      (theme.name && (theme.name[lang] || theme.name.en)) || theme.id;
-
-    card.innerHTML = `
-            <div class="theme-card-title">${themeName}</div>
-            <div class="theme-preview-box">
-                <div class="preview-tiles-row">
-                    <div class="preview-tile absent">A</div>
-                    <div class="preview-tile present">B</div>
-                    <div class="preview-tile correct">C</div>
-                </div>
-            </div>
-        `;
-
-    card.onclick = () => {
-      applyTheme(theme);
-      renderThemeModal();
-    };
-
-    themeGrid.appendChild(card);
-  });
-}
-
-/** Opens the Rules/Info modal window. */
-function openRulesModal() {
-  updateUITexts();
-  document.getElementById("rules-modal").classList.add("active");
-}
-
-/** Closes the Rules/Info modal window. */
-function closeRulesModal() {
-  document.getElementById("rules-modal").classList.remove("active");
-}
-
-/** Updates application language state. */
-function changeLanguage(lang) {
-  currentLang = lang;
-  localStorage.setItem("termo_lang", lang);
-  updateLangToggleUI();
-  updateUITexts();
-  renderThemeModal();
-}
-
-/** Syncs language selector dropdown value. */
-function updateLangToggleUI() {
-  const langSelect = document.getElementById("lang-select");
-  if (langSelect) {
-    langSelect.value = currentLang;
-  }
-}
-
-/** Refreshes localized texts across active UI components and modals. */
-function updateUITexts() {
-  if (typeof TRANSLATIONS === "undefined") {
-    console.error("CRITICAL: translations.js failed to load!");
-    return;
-  }
-
-  if (!TRANSLATIONS[currentLang]) {
-    console.warn(`Language '${currentLang}' not found, defaulting to 'en'`);
-    currentLang = "en";
-    localStorage.setItem("termo_lang", "en");
-  }
-
-  const langLabel = document.getElementById("lang-label");
-  if (langLabel) langLabel.textContent = TRANSLATIONS[currentLang].langLabel;
-
-  const giveUpBtn = document.getElementById("giveup-btn");
-  if (giveUpBtn) {
-    giveUpBtn.innerText = TRANSLATIONS[currentLang].giveUp;
-    giveUpBtn.removeAttribute("title");
-    giveUpBtn.setAttribute(
-      "data-tooltip",
-      TRANSLATIONS[currentLang].giveUpTooltip,
-    );
-  }
-
-  const hintBtn = document.getElementById("hint-btn");
-  if (hintBtn) {
-    hintBtn.innerText = TRANSLATIONS[currentLang].hint;
-    hintBtn.removeAttribute("title");
-    hintBtn.setAttribute("data-tooltip", TRANSLATIONS[currentLang].hintTooltip);
-  }
-
-  const infoBtn = document.getElementById("info-btn");
-  if (infoBtn) {
-    infoBtn.innerText = TRANSLATIONS[currentLang].info;
-    infoBtn.removeAttribute("title");
-    infoBtn.setAttribute("data-tooltip", TRANSLATIONS[currentLang].infoTooltip);
-  }
-
-  const themeBtn = document.getElementById("theme-btn");
-  if (themeBtn) themeBtn.innerText = TRANSLATIONS[currentLang].themeBtn;
-
-  const themeModalTitle = document.getElementById("theme-modal-title");
-  if (themeModalTitle)
-    themeModalTitle.innerText = TRANSLATIONS[currentLang].selectTheme;
-
-  const rulesTitle = document.getElementById("rules-title");
-  if (rulesTitle) rulesTitle.innerText = TRANSLATIONS[currentLang].rules.title;
-
-  const rulesDesc = document.getElementById("rules-desc");
-  if (rulesDesc) rulesDesc.innerText = TRANSLATIONS[currentLang].rules.desc;
-
-  const rulesCorrect = document.getElementById("rules-correct-ex");
-  if (rulesCorrect)
-    rulesCorrect.innerText = TRANSLATIONS[currentLang].rules.correct;
-
-  const rulesPresent = document.getElementById("rules-present-ex");
-  if (rulesPresent)
-    rulesPresent.innerText = TRANSLATIONS[currentLang].rules.present;
-
-  const rulesAbsent = document.getElementById("rules-absent-ex");
-  if (rulesAbsent)
-    rulesAbsent.innerText = TRANSLATIONS[currentLang].rules.absent;
-
-  const closeRulesBtn = document.getElementById("close-rules-btn");
-  if (closeRulesBtn) closeRulesBtn.innerText = TRANSLATIONS[currentLang].ok;
-
-  const spaceKey = document.getElementById("key-SPACE");
-  if (spaceKey) spaceKey.innerText = TRANSLATIONS[currentLang].spaceBtn;
-
-  const targetBadge = document.getElementById("target-badge");
-  if (targetBadge) {
-    targetBadge.textContent =
-      TRANSLATIONS[currentLang].targetLabel(targetCount);
-  }
-
-  if (gameEndState) {
-    const t = TRANSLATIONS[currentLang];
-    const messagesList = t[`${gameEndState.type}Messages`];
-    const text = messagesList[gameEndState.messageIndex];
-
-    document.getElementById("modal-title").innerText =
-      t.modalTitles[gameEndState.type] || "";
-    document.getElementById("modal-message").innerText = text;
-
-    const wordContainer = document.getElementById("modal-word-container");
-    if (gameEndState.type === "lose" || gameEndState.type === "giveup") {
-      wordContainer.style.display = "block";
-      document.getElementById("modal-word-label").innerText = t.wordWas;
-      document.getElementById("modal-word").innerText = gameEndState.targetWord;
-    } else {
-      wordContainer.style.display = "none";
-    }
-
-    document.querySelectorAll(".modal-close-btn").forEach((btn) => {
-      btn.innerText = t.ok;
-    });
-
-    const modalEl = document.getElementById("endgame-modal");
-    if (modalEl && modalEl.classList.contains("active")) {
-      openModal();
-    }
-  }
-}
-
-/** Display victory/defeat/pity endgame modal window. */
-function openModal() {
-  clearMessage();
-  document.getElementById("endgame-modal").classList.add("active");
-}
-
-/** Close active modal window. */
-function closeModal() {
-  document.getElementById("endgame-modal").classList.remove("active");
-}
-
-/** Constructs active board grid DOM elements per target board. */
-function buildGrid() {
-  const grid = document.getElementById("grid");
-  grid.innerHTML = "";
-
-  for (let b = 0; b < targetCount; b++) {
-    if (b > 0) {
-      const divider = document.createElement("div");
-      divider.className = "board-divider";
-      grid.appendChild(divider);
-    }
-
-    const board = document.createElement("div");
-    board.className = "board";
-    board.id = `board-${b}`;
-
-    for (let r = 0; r < maxAttempts; r++) {
-      const row = document.createElement("div");
-      row.className = "row";
-
-      for (let c = 0; c < wordLength; c++) {
-        const tile = document.createElement("div");
-        tile.id = `tile-${b}-${r}-${c}`;
-        tile.className = "tile";
-
-        tile.addEventListener("click", () => {
-          if (!gameOver && r === currentAttempt && !isSkippableColumn(c)) {
-            cursorIndex = c;
-            updateCurrentRow();
-          }
-        });
-
-        row.appendChild(tile);
-      }
-      board.appendChild(row);
-    }
-    grid.appendChild(board);
-  }
-}
-
-/** Constructs virtual keyboard buttons DOM elements. */
-function buildKeyboard() {
-  const keyboard = document.getElementById("keyboard");
-  keyboard.innerHTML = "";
-
-  KEYBOARD_LAYOUT.forEach((rowKeys) => {
-    const row = document.createElement("div");
-    row.className = "keyboard-row";
-
-    rowKeys.forEach((keyText) => {
-      const button = document.createElement("button");
-      button.className = "key";
-      button.innerText = keyText;
-
-      // Preserve valid DOM ID syntax while using literal space for logic
-      button.id = keyText === " " ? "key-SPACE" : `key-${keyText}`;
-
-      if (keyText === "ENTER" || keyText === "DEL") {
-        button.classList.add("large");
-      } else if (keyText === " ") {
-        button.classList.add("space-bar-key");
-      }
-
-      button.addEventListener("click", () => {
-        if (!gameOver) processInput(keyText);
-      });
-
-      row.appendChild(button);
-    });
-
-    keyboard.appendChild(row);
-  });
-}
-
-/** Handles physical keyboard listener events. */
 function handlePhysicalKeyboard(e) {
   if (e.key === " " || e.code === "Space") {
     e.preventDefault();
@@ -550,7 +247,6 @@ function handlePhysicalKeyboard(e) {
   }
 }
 
-/** Process key command or character into guess state buffer. */
 function processInput(key) {
   if (gameOver || isAnimating) return;
 
@@ -577,7 +273,6 @@ function processInput(key) {
   }
 }
 
-/** Re-renders current active attempt row tiles across all active target boards. */
 function updateCurrentRow() {
   for (let b = 0; b < targetCount; b++) {
     if (boardStates[b] && boardStates[b].solved) continue;
@@ -618,18 +313,15 @@ function updateCurrentRow() {
   }
 }
 
-/** Requests a hint from server API and triggers row reveal animation. */
 async function useHint() {
   if (gameOver || isAnimating) return;
 
   clearMessage();
   isAnimating = true;
 
-  // Find the first active (unsolved) board to target the hint
   const activeBoardIdx = boardStates.findIndex((b) => !b.solved);
   const bIdx = activeBoardIdx === -1 ? 0 : activeBoardIdx;
 
-  // Dynamically find all indices currently marked as correct on this board
   const knownCorrect = new Set(correctIndices);
   for (let r = 0; r < currentAttempt; r++) {
     for (let c = 0; c < wordLength; c++) {
@@ -644,16 +336,7 @@ async function useHint() {
   updateCurrentRow();
 
   try {
-    const response = await fetch("/api/hint", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        revealed_indices: Array.from(knownCorrect),
-        board_index: bIdx,
-      }),
-    });
-
-    const data = await response.json();
+    const data = await fetchHintAPI(Array.from(knownCorrect), bIdx);
 
     if (data.error) {
       isAnimating = false;
@@ -669,7 +352,6 @@ async function useHint() {
   }
 }
 
-/** Submits current guess attempt to server API. */
 async function submitGuess() {
   if (gameOver || isAnimating) return;
 
@@ -686,11 +368,7 @@ async function submitGuess() {
     }
   }
 
-  if (
-    fullGuessArray.some(
-      (char) => char === undefined || char === null || char === "",
-    )
-  ) {
+  if (fullGuessArray.some((char) => char === undefined || char === null || char === "")) {
     showMessage(TRANSLATIONS[currentLang].mustFill(wordLength));
     return;
   }
@@ -699,13 +377,7 @@ async function submitGuess() {
   const wordToSubmit = fullGuessArray.join("");
 
   try {
-    const response = await fetch("/api/guess", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ word: wordToSubmit }),
-    });
-
-    const data = await response.json();
+    const data = await submitGuessAPI(wordToSubmit);
 
     if (data.error) {
       isAnimating = false;
@@ -720,7 +392,6 @@ async function submitGuess() {
   }
 }
 
-/** Animates tile reveals for attempt/hint result and updates game state. */
 function animateAndProcessResult(data) {
   return new Promise((resolve) => {
     isAnimating = true;
@@ -740,16 +411,12 @@ function animateAndProcessResult(data) {
       const evalData = evaluations[b] || evaluations[0];
 
       for (let i = 0; i < wordLength; i++) {
-        const backendChar =
-          (evalData.guess && evalData.guess[i]) ||
-          (data.guess && data.guess[i]);
+        const backendChar = (evalData.guess && evalData.guess[i]) || (data.guess && data.guess[i]);
         const letter = currentGuess[i] || backendChar || "";
 
         if (!isGivenTile(b, i)) {
           if (evalData.pattern[i] === "correct" && letter !== targets[b][i]) {
-            evalData.pattern[i] = targets[b].includes(letter)
-              ? "present"
-              : "absent";
+            evalData.pattern[i] = targets[b].includes(letter) ? "present" : "absent";
           }
         } else {
           evalData.pattern[i] = "correct";
@@ -767,14 +434,8 @@ function animateAndProcessResult(data) {
 
         if (isGivenTile(b, i)) continue;
 
-        const backendChar =
-          (evalData.guess && evalData.guess[i]) ||
-          (data.guess && data.guess[i]);
-        let displayLetter =
-          currentGuess[i] ||
-          (evalData.revealed_letters && evalData.revealed_letters[i]) ||
-          backendChar ||
-          "";
+        const backendChar = (evalData.guess && evalData.guess[i]) || (data.guess && data.guess[i]);
+        let displayLetter = currentGuess[i] || (evalData.revealed_letters && evalData.revealed_letters[i]) || backendChar || "";
 
         const status = evalData.pattern[i];
 
@@ -782,10 +443,7 @@ function animateAndProcessResult(data) {
           tile.classList.add("flip");
 
           setTimeout(() => {
-            const isUnrevealedHintSlot =
-              evalData.revealed_letters &&
-              displayLetter === "." &&
-              status !== "correct";
+            const isUnrevealedHintSlot = evalData.revealed_letters && displayLetter === "." && status !== "correct";
 
             if (isUnrevealedHintSlot) {
               tile.innerText = "";
@@ -821,13 +479,11 @@ function animateAndProcessResult(data) {
         gameOver = true;
         gameEndState = {
           type: "win",
-          messageIndex: Math.floor(
-            Math.random() * TRANSLATIONS[currentLang].winMessages.length,
-          ),
+          messageIndex: Math.floor(Math.random() * TRANSLATIONS[currentLang].winMessages.length),
         };
         clearMessage();
         grayOutRemainingTiles();
-        updateUITexts();
+        refreshUI();
         disableActionButtons();
         openModal();
         resolve();
@@ -840,16 +496,12 @@ function animateAndProcessResult(data) {
         gameOver = true;
         gameEndState = {
           type: "lose",
-          targetWord:
-            data.target_word ||
-            (data.target_words ? data.target_words.join(", ") : ""),
-          messageIndex: Math.floor(
-            Math.random() * TRANSLATIONS[currentLang].loseMessages.length,
-          ),
+          targetWord: data.target_word || (data.target_words ? data.target_words.join(", ") : ""),
+          messageIndex: Math.floor(Math.random() * TRANSLATIONS[currentLang].loseMessages.length),
         };
         clearMessage();
         grayOutRemainingTiles();
-        updateUITexts();
+        refreshUI();
         disableActionButtons();
         openModal();
         resolve();
@@ -868,22 +520,18 @@ function animateAndProcessResult(data) {
   });
 }
 
-/** Surrenders current game match immediately. */
 async function giveUp() {
   if (gameOver || isAnimating) return;
 
   clearMessage();
 
-  const response = await fetch("/api/give-up", { method: "POST" });
-  const data = await response.json();
+  const data = await giveUpAPI();
 
   gameOver = true;
   gameEndState = {
     type: "giveup",
     targetWord: data.target_word,
-    messageIndex: Math.floor(
-      Math.random() * TRANSLATIONS[currentLang].giveupMessages.length,
-    ),
+    messageIndex: Math.floor(Math.random() * TRANSLATIONS[currentLang].giveupMessages.length),
   };
 
   for (let b = 0; b < targetCount; b++) {
@@ -893,70 +541,11 @@ async function giveUp() {
 
   clearMessage();
   grayOutRemainingTiles();
-  updateUITexts();
+  refreshUI();
   disableActionButtons();
   openModal();
 }
 
-/** Disables action buttons when game is finished. */
-function disableActionButtons() {
-  const giveUpBtn = document.getElementById("giveup-btn");
-  if (giveUpBtn) giveUpBtn.disabled = true;
-
-  const hintBtn = document.getElementById("hint-btn");
-  if (hintBtn) hintBtn.disabled = true;
-
-  const infoBtn = document.getElementById("info-btn");
-  if (infoBtn) infoBtn.disabled = true;
-}
-
-/** Updates keyboard key status colors based on status hierarchy. */
-function updateKeyStatus(letter, newStatus) {
-  if (!letter) return;
-
-  const keyId = letter === " " ? "SPACE" : letter;
-  const currentStatus = letterStatuses[keyId];
-
-  if (
-    !currentStatus ||
-    STATUS_PRIORITY[newStatus] > STATUS_PRIORITY[currentStatus]
-  ) {
-    letterStatuses[keyId] = newStatus;
-
-    const keyBtn = document.getElementById(`key-${keyId}`);
-    if (keyBtn) {
-      keyBtn.classList.remove("correct", "present", "absent");
-      keyBtn.classList.add(newStatus);
-    }
-  }
-}
-
-/** Display temporary message string above board grid. */
-function showMessage(text) {
-  const msgEl = document.getElementById("message");
-  if (!msgEl) return;
-
-  msgEl.innerText = text;
-  if (messageTimeout) clearTimeout(messageTimeout);
-
-  messageTimeout = setTimeout(() => {
-    msgEl.innerText = "";
-  }, 3000);
-}
-
-/** Clears temporary UI banner text. */
-function clearMessage() {
-  const msgEl = document.getElementById("message");
-  if (!msgEl) return;
-  msgEl.innerText = "";
-
-  if (messageTimeout) {
-    clearTimeout(messageTimeout);
-    messageTimeout = null;
-  }
-}
-
-/** Grays out remaining un-evaluated tiles across all boards. */
 function grayOutRemainingTiles() {
   for (let b = 0; b < targetCount; b++) {
     for (let r = 0; r < maxAttempts; r++) {
@@ -972,10 +561,7 @@ function grayOutRemainingTiles() {
           continue;
         }
 
-        const isEvaluated =
-          tile.classList.contains("correct") ||
-          tile.classList.contains("present") ||
-          tile.classList.contains("absent");
+        const isEvaluated = tile.classList.contains("correct") || tile.classList.contains("present") || tile.classList.contains("absent");
 
         if (!isEvaluated) {
           tile.classList.add("disabled-tile");
@@ -984,5 +570,16 @@ function grayOutRemainingTiles() {
     }
   }
 }
+
+// Expose necessary functions to the global window object to preserve inline HTML event handlers
+window.changeLanguage = changeLanguage;
+window.openThemeModal = openThemeModal;
+window.closeThemeModal = closeThemeModal;
+window.openRulesModal = openRulesModal;
+window.closeRulesModal = closeRulesModal;
+window.closeModal = closeModal;
+window.useHint = useHint;
+window.giveUp = giveUp;
+window.openModal = openModal;
 
 initGame();

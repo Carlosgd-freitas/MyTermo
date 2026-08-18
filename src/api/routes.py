@@ -1,19 +1,24 @@
 import json
 import random
 from pathlib import Path
-from config import GIVEN_TILES, MAX_ATTEMPTS, TARGET, TITLE
 from fastapi import APIRouter
 from fastapi.responses import FileResponse
-from game_logic import (
+from pydantic import BaseModel
+
+# Updated internal imports
+from src.config import GIVEN_TILES, MAX_ATTEMPTS, TARGET, TITLE
+from src.game.logic import (
     evaluate_guess,
     normalize_given_tiles,
     normalize_string,
 )
-from pydantic import BaseModel
 
 router = APIRouter()
-FAVICON_PATH = Path(__file__).parent / "favicon.ico"
-THEMES_DIR = Path(__file__).parent / "themes"
+
+# Resolve the root directory by stepping up three levels
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+FAVICON_PATH = BASE_DIR / "favicon.ico"
+THEMES_DIR = BASE_DIR / "themes"
 
 PREFERRED_THEME_ORDER = [
     "classic",
