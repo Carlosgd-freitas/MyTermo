@@ -104,7 +104,7 @@ async def get_config():
     # Determine standard target variables
     target_list = TARGET if isinstance(TARGET, list) else [TARGET]
     word_length = len(target_list[0]) if target_list else 5
-    
+
     return {
         "title": TITLE,
         "length": word_length,

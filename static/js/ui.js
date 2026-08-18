@@ -23,11 +23,16 @@ export function applyTheme(theme) {
   Object.entries(theme.colors).forEach(([key, value]) => {
     root.style.setProperty(`--${key}`, value);
   });
-  
+
   return theme.id;
 }
 
-export function renderThemeModal(availableThemes, currentThemeId, currentLang, onThemeSelect) {
+export function renderThemeModal(
+  availableThemes,
+  currentThemeId,
+  currentLang,
+  onThemeSelect,
+) {
   const themeGrid = document.getElementById("theme-grid");
   if (!themeGrid) return;
 
@@ -53,7 +58,8 @@ export function renderThemeModal(availableThemes, currentThemeId, currentLang, o
     card.style.setProperty("--p-correct", correct);
     card.style.setProperty("--tile-border", border);
 
-    const themeName = (theme.name && (theme.name[currentLang] || theme.name.en)) || theme.id;
+    const themeName =
+      (theme.name && (theme.name[currentLang] || theme.name.en)) || theme.id;
 
     card.innerHTML = `
             <div class="theme-card-title">${themeName}</div>
@@ -72,12 +78,25 @@ export function renderThemeModal(availableThemes, currentThemeId, currentLang, o
   });
 }
 
-export function openThemeModal() { document.getElementById("theme-modal").classList.add("active"); }
-export function closeThemeModal() { document.getElementById("theme-modal").classList.remove("active"); }
-export function openRulesModal() { document.getElementById("rules-modal").classList.add("active"); }
-export function closeRulesModal() { document.getElementById("rules-modal").classList.remove("active"); }
-export function openModal() { clearMessage(); document.getElementById("endgame-modal").classList.add("active"); }
-export function closeModal() { document.getElementById("endgame-modal").classList.remove("active"); }
+export function openThemeModal() {
+  document.getElementById("theme-modal").classList.add("active");
+}
+export function closeThemeModal() {
+  document.getElementById("theme-modal").classList.remove("active");
+}
+export function openRulesModal() {
+  document.getElementById("rules-modal").classList.add("active");
+}
+export function closeRulesModal() {
+  document.getElementById("rules-modal").classList.remove("active");
+}
+export function openModal() {
+  clearMessage();
+  document.getElementById("endgame-modal").classList.add("active");
+}
+export function closeModal() {
+  document.getElementById("endgame-modal").classList.remove("active");
+}
 
 export function updateLangToggleUI(currentLang) {
   const langSelect = document.getElementById("lang-select");
@@ -86,7 +105,12 @@ export function updateLangToggleUI(currentLang) {
   }
 }
 
-export function updateUITexts(currentLang, targetCount, gameEndState, openModalCallback) {
+export function updateUITexts(
+  currentLang,
+  targetCount,
+  gameEndState,
+  openModalCallback,
+) {
   if (typeof TRANSLATIONS === "undefined") {
     console.error("CRITICAL: translations.js failed to load!");
     return;
@@ -105,7 +129,10 @@ export function updateUITexts(currentLang, targetCount, gameEndState, openModalC
   if (giveUpBtn) {
     giveUpBtn.innerText = TRANSLATIONS[currentLang].giveUp;
     giveUpBtn.removeAttribute("title");
-    giveUpBtn.setAttribute("data-tooltip", TRANSLATIONS[currentLang].giveUpTooltip);
+    giveUpBtn.setAttribute(
+      "data-tooltip",
+      TRANSLATIONS[currentLang].giveUpTooltip,
+    );
   }
 
   const hintBtn = document.getElementById("hint-btn");
@@ -126,10 +153,12 @@ export function updateUITexts(currentLang, targetCount, gameEndState, openModalC
   if (themeBtn) themeBtn.innerText = TRANSLATIONS[currentLang].themeBtn;
 
   const themeModalTitle = document.getElementById("theme-modal-title");
-  if (themeModalTitle) themeModalTitle.innerText = TRANSLATIONS[currentLang].selectTheme;
+  if (themeModalTitle)
+    themeModalTitle.innerText = TRANSLATIONS[currentLang].selectTheme;
 
   const subjectBoxTitle = document.getElementById("subject-box-title");
-  if (subjectBoxTitle) subjectBoxTitle.innerText = TRANSLATIONS[currentLang].subjectTitle;
+  if (subjectBoxTitle)
+    subjectBoxTitle.innerText = TRANSLATIONS[currentLang].subjectTitle;
 
   const rulesTitle = document.getElementById("rules-title");
   if (rulesTitle) rulesTitle.innerText = TRANSLATIONS[currentLang].rules.title;
@@ -138,13 +167,16 @@ export function updateUITexts(currentLang, targetCount, gameEndState, openModalC
   if (rulesDesc) rulesDesc.innerText = TRANSLATIONS[currentLang].rules.desc;
 
   const rulesCorrect = document.getElementById("rules-correct-ex");
-  if (rulesCorrect) rulesCorrect.innerText = TRANSLATIONS[currentLang].rules.correct;
+  if (rulesCorrect)
+    rulesCorrect.innerText = TRANSLATIONS[currentLang].rules.correct;
 
   const rulesPresent = document.getElementById("rules-present-ex");
-  if (rulesPresent) rulesPresent.innerText = TRANSLATIONS[currentLang].rules.present;
+  if (rulesPresent)
+    rulesPresent.innerText = TRANSLATIONS[currentLang].rules.present;
 
   const rulesAbsent = document.getElementById("rules-absent-ex");
-  if (rulesAbsent) rulesAbsent.innerText = TRANSLATIONS[currentLang].rules.absent;
+  if (rulesAbsent)
+    rulesAbsent.innerText = TRANSLATIONS[currentLang].rules.absent;
 
   const closeRulesBtn = document.getElementById("close-rules-btn");
   if (closeRulesBtn) closeRulesBtn.innerText = TRANSLATIONS[currentLang].ok;
@@ -154,7 +186,8 @@ export function updateUITexts(currentLang, targetCount, gameEndState, openModalC
 
   const targetBadge = document.getElementById("target-badge");
   if (targetBadge) {
-    targetBadge.textContent = TRANSLATIONS[currentLang].targetLabel(targetCount);
+    targetBadge.textContent =
+      TRANSLATIONS[currentLang].targetLabel(targetCount);
   }
 
   if (gameEndState) {
@@ -162,7 +195,8 @@ export function updateUITexts(currentLang, targetCount, gameEndState, openModalC
     const messagesList = t[`${gameEndState.type}Messages`];
     const text = messagesList[gameEndState.messageIndex];
 
-    document.getElementById("modal-title").innerText = t.modalTitles[gameEndState.type] || "";
+    document.getElementById("modal-title").innerText =
+      t.modalTitles[gameEndState.type] || "";
     document.getElementById("modal-message").innerText = text;
 
     const wordContainer = document.getElementById("modal-word-container");
@@ -266,7 +300,10 @@ export function updateKeyStatus(letter, newStatus) {
   const keyId = letter === " " ? "SPACE" : letter;
   const currentStatus = letterStatuses[keyId];
 
-  if (!currentStatus || STATUS_PRIORITY[newStatus] > STATUS_PRIORITY[currentStatus]) {
+  if (
+    !currentStatus ||
+    STATUS_PRIORITY[newStatus] > STATUS_PRIORITY[currentStatus]
+  ) {
     letterStatuses[keyId] = newStatus;
 
     const keyBtn = document.getElementById(`key-${keyId}`);
@@ -301,47 +338,48 @@ export function clearMessage() {
 }
 
 export function buildSubjectBox(text, imageUrl, lang) {
-  const existingBox = document.getElementById('subject-box');
+  const existingBox = document.getElementById("subject-box");
   if (existingBox) existingBox.remove();
 
   if (!text && !imageUrl) return;
 
-  const grid = document.getElementById('grid');
-  
-  let wrapper = document.getElementById('game-board-wrapper');
+  const grid = document.getElementById("grid");
+
+  let wrapper = document.getElementById("game-board-wrapper");
   if (!wrapper) {
-    wrapper = document.createElement('div');
-    wrapper.id = 'game-board-wrapper';
+    wrapper = document.createElement("div");
+    wrapper.id = "game-board-wrapper";
     grid.parentNode.insertBefore(wrapper, grid);
     wrapper.appendChild(grid);
   }
 
-  const subjectBox = document.createElement('div');
-  subjectBox.id = 'subject-box';
-  subjectBox.className = 'subject-box';
-  
-  const titleText = (typeof TRANSLATIONS !== "undefined" && TRANSLATIONS[lang]) 
-    ? TRANSLATIONS[lang].subjectTitle 
-    : "Subject";
+  const subjectBox = document.createElement("div");
+  subjectBox.id = "subject-box";
+  subjectBox.className = "subject-box";
+
+  const titleText =
+    typeof TRANSLATIONS !== "undefined" && TRANSLATIONS[lang]
+      ? TRANSLATIONS[lang].subjectTitle
+      : "Subject";
 
   let innerHTML = `
     <div class="subject-title-bar" id="subject-box-title">${titleText}</div>
     <div class="subject-content">
   `;
-  
+
   if (imageUrl) {
     innerHTML += `<img src="${imageUrl}" alt="Hint" class="subject-image" />`;
   }
   if (text) {
     innerHTML += `<div class="subject-text">${text}</div>`;
   }
-  
+
   innerHTML += `</div><div class="subject-cover">?</div>`;
-  
+
   subjectBox.innerHTML = innerHTML;
-  
-  subjectBox.addEventListener('click', () => {
-    subjectBox.classList.add('revealed');
+
+  subjectBox.addEventListener("click", () => {
+    subjectBox.classList.add("revealed");
   });
 
   wrapper.insertBefore(subjectBox, grid);

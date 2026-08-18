@@ -1,12 +1,32 @@
 // static/js/app.js
 
-import { fetchThemes, fetchConfig, fetchHintAPI, submitGuessAPI, giveUpAPI } from './api.js';
-import { 
-  getTileElement, applyTheme, renderThemeModal, openThemeModal, closeThemeModal, 
-  openRulesModal, closeRulesModal, openModal, closeModal, updateLangToggleUI, 
-  updateUITexts, buildGrid, buildKeyboard, disableActionButtons, 
-  updateKeyStatus, showMessage, clearMessage, buildSubjectBox, 
-} from './ui.js';
+import {
+  fetchThemes,
+  fetchConfig,
+  fetchHintAPI,
+  submitGuessAPI,
+  giveUpAPI,
+} from "./api.js";
+import {
+  getTileElement,
+  applyTheme,
+  renderThemeModal,
+  openThemeModal,
+  closeThemeModal,
+  openRulesModal,
+  closeRulesModal,
+  openModal,
+  closeModal,
+  updateLangToggleUI,
+  updateUITexts,
+  buildGrid,
+  buildKeyboard,
+  disableActionButtons,
+  updateKeyStatus,
+  showMessage,
+  clearMessage,
+  buildSubjectBox,
+} from "./ui.js";
 
 let currentLang = localStorage.getItem("termo_lang") || "en";
 let currentThemeId = localStorage.getItem("termo_theme") || "classic";
@@ -70,7 +90,12 @@ function createEmptyGuessArray() {
 
 function handleThemeSelection(theme) {
   currentThemeId = applyTheme(theme);
-  renderThemeModal(availableThemes, currentThemeId, currentLang, handleThemeSelection);
+  renderThemeModal(
+    availableThemes,
+    currentThemeId,
+    currentLang,
+    handleThemeSelection,
+  );
 }
 
 async function initGame() {
@@ -78,11 +103,18 @@ async function initGame() {
 
   try {
     availableThemes = await fetchThemes();
-    const activeTheme = availableThemes.find((t) => t.id === currentThemeId) || availableThemes[0];
+    const activeTheme =
+      availableThemes.find((t) => t.id === currentThemeId) ||
+      availableThemes[0];
     if (activeTheme) {
       currentThemeId = applyTheme(activeTheme);
     }
-    renderThemeModal(availableThemes, currentThemeId, currentLang, handleThemeSelection);
+    renderThemeModal(
+      availableThemes,
+      currentThemeId,
+      currentLang,
+      handleThemeSelection,
+    );
   } catch (e) {
     console.error("Failed to fetch themes from /api/themes", e);
   }
@@ -112,7 +144,9 @@ async function initGame() {
 
     boardStates = Array.from({ length: targetCount }, (_, b) => {
       const targetWord = targets[b] || "";
-      const isSolved = targetWord.length > 0 && targetWord.split("").every((char) => givenTiles.includes(char));
+      const isSolved =
+        targetWord.length > 0 &&
+        targetWord.split("").every((char) => givenTiles.includes(char));
       return { solved: isSolved, solvedAtAttempt: isSolved ? 0 : null };
     });
 
@@ -143,7 +177,9 @@ async function initGame() {
       gameOver = true;
       gameEndState = {
         type: "win",
-        messageIndex: Math.floor(Math.random() * TRANSLATIONS[currentLang].winMessages.length),
+        messageIndex: Math.floor(
+          Math.random() * TRANSLATIONS[currentLang].winMessages.length,
+        ),
       };
       grayOutRemainingTiles();
       refreshUI();
@@ -164,7 +200,7 @@ function handleTileClick(r, c) {
 }
 
 function refreshUI() {
-    updateUITexts(currentLang, targetCount, gameEndState, openModal);
+  updateUITexts(currentLang, targetCount, gameEndState, openModal);
 }
 
 function changeLanguage(lang) {
@@ -172,7 +208,12 @@ function changeLanguage(lang) {
   localStorage.setItem("termo_lang", lang);
   updateLangToggleUI(currentLang);
   refreshUI();
-  renderThemeModal(availableThemes, currentThemeId, currentLang, handleThemeSelection);
+  renderThemeModal(
+    availableThemes,
+    currentThemeId,
+    currentLang,
+    handleThemeSelection,
+  );
 }
 
 function revealGivenTilesForRow(rowIdx) {
@@ -370,7 +411,11 @@ async function submitGuess() {
     }
   }
 
-  if (fullGuessArray.some((char) => char === undefined || char === null || char === "")) {
+  if (
+    fullGuessArray.some(
+      (char) => char === undefined || char === null || char === "",
+    )
+  ) {
     showMessage(TRANSLATIONS[currentLang].mustFill(wordLength));
     return;
   }
@@ -413,12 +458,16 @@ function animateAndProcessResult(data) {
       const evalData = evaluations[b] || evaluations[0];
 
       for (let i = 0; i < wordLength; i++) {
-        const backendChar = (evalData.guess && evalData.guess[i]) || (data.guess && data.guess[i]);
+        const backendChar =
+          (evalData.guess && evalData.guess[i]) ||
+          (data.guess && data.guess[i]);
         const letter = currentGuess[i] || backendChar || "";
 
         if (!isGivenTile(b, i)) {
           if (evalData.pattern[i] === "correct" && letter !== targets[b][i]) {
-            evalData.pattern[i] = targets[b].includes(letter) ? "present" : "absent";
+            evalData.pattern[i] = targets[b].includes(letter)
+              ? "present"
+              : "absent";
           }
         } else {
           evalData.pattern[i] = "correct";
@@ -436,8 +485,14 @@ function animateAndProcessResult(data) {
 
         if (isGivenTile(b, i)) continue;
 
-        const backendChar = (evalData.guess && evalData.guess[i]) || (data.guess && data.guess[i]);
-        let displayLetter = currentGuess[i] || (evalData.revealed_letters && evalData.revealed_letters[i]) || backendChar || "";
+        const backendChar =
+          (evalData.guess && evalData.guess[i]) ||
+          (data.guess && data.guess[i]);
+        let displayLetter =
+          currentGuess[i] ||
+          (evalData.revealed_letters && evalData.revealed_letters[i]) ||
+          backendChar ||
+          "";
 
         const status = evalData.pattern[i];
 
@@ -445,7 +500,10 @@ function animateAndProcessResult(data) {
           tile.classList.add("flip");
 
           setTimeout(() => {
-            const isUnrevealedHintSlot = evalData.revealed_letters && displayLetter === "." && status !== "correct";
+            const isUnrevealedHintSlot =
+              evalData.revealed_letters &&
+              displayLetter === "." &&
+              status !== "correct";
 
             if (isUnrevealedHintSlot) {
               tile.innerText = "";
@@ -481,7 +539,9 @@ function animateAndProcessResult(data) {
         gameOver = true;
         gameEndState = {
           type: "win",
-          messageIndex: Math.floor(Math.random() * TRANSLATIONS[currentLang].winMessages.length),
+          messageIndex: Math.floor(
+            Math.random() * TRANSLATIONS[currentLang].winMessages.length,
+          ),
         };
         clearMessage();
         grayOutRemainingTiles();
@@ -498,8 +558,12 @@ function animateAndProcessResult(data) {
         gameOver = true;
         gameEndState = {
           type: "lose",
-          targetWord: data.target_word || (data.target_words ? data.target_words.join(", ") : ""),
-          messageIndex: Math.floor(Math.random() * TRANSLATIONS[currentLang].loseMessages.length),
+          targetWord:
+            data.target_word ||
+            (data.target_words ? data.target_words.join(", ") : ""),
+          messageIndex: Math.floor(
+            Math.random() * TRANSLATIONS[currentLang].loseMessages.length,
+          ),
         };
         clearMessage();
         grayOutRemainingTiles();
@@ -533,7 +597,9 @@ async function giveUp() {
   gameEndState = {
     type: "giveup",
     targetWord: data.target_word,
-    messageIndex: Math.floor(Math.random() * TRANSLATIONS[currentLang].giveupMessages.length),
+    messageIndex: Math.floor(
+      Math.random() * TRANSLATIONS[currentLang].giveupMessages.length,
+    ),
   };
 
   for (let b = 0; b < targetCount; b++) {
@@ -563,7 +629,10 @@ function grayOutRemainingTiles() {
           continue;
         }
 
-        const isEvaluated = tile.classList.contains("correct") || tile.classList.contains("present") || tile.classList.contains("absent");
+        const isEvaluated =
+          tile.classList.contains("correct") ||
+          tile.classList.contains("present") ||
+          tile.classList.contains("absent");
 
         if (!isEvaluated) {
           tile.classList.add("disabled-tile");
