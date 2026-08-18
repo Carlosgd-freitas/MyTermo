@@ -115,11 +115,13 @@ def check_guess(request: GuessRequest):
     evaluations = []
     for w in TARGET:
         pattern, revealed_letters = evaluate_guess(guess, w)
-        evaluations.append({
-            "pattern": pattern,
-            "revealed_letters": revealed_letters,
-            "target_word": normalize_string(w),
-        })
+        evaluations.append(
+            {
+                "pattern": pattern,
+                "revealed_letters": revealed_letters,
+                "target_word": normalize_string(w),
+            }
+        )
 
     return {
         "guess": guess,
@@ -136,16 +138,18 @@ def check_guess(request: GuessRequest):
 def get_hint(request: HintRequest):
     """Generate a single unrevealed letter hint for active game targets."""
     target_norms = [normalize_string(w) for w in TARGET]
-    
+
     # Target the specific board the user is struggling with
-    board_idx = request.board_index if 0 <= request.board_index < len(target_norms) else 0
+    board_idx = (
+        request.board_index if 0 <= request.board_index < len(target_norms) else 0
+    )
     active_target = target_norms[board_idx] if target_norms else ""
-    
+
     given_set = normalize_given_tiles(GIVEN_TILES)
     target_len = len(active_target)
 
     given_indices = {i for i, char in enumerate(active_target) if char in given_set}
-    
+
     # Safely filter out both given tiles AND tiles the user already got right
     unrevealed = [
         i
@@ -158,9 +162,11 @@ def get_hint(request: HintRequest):
 
     # Randomly select from strictly unknown tiles
     hint_idx = random.choice(unrevealed)
-    
+
     hint_chars = [
-        char if (char in given_set or i == hint_idx or i in request.revealed_indices) else "."
+        char
+        if (char in given_set or i == hint_idx or i in request.revealed_indices)
+        else "."
         for i, char in enumerate(active_target)
     ]
 
@@ -169,11 +175,13 @@ def get_hint(request: HintRequest):
     evaluations = []
     for w in TARGET:
         pattern, revealed_letters = evaluate_guess(hint_word, w)
-        evaluations.append({
-            "pattern": pattern,
-            "revealed_letters": revealed_letters,
-            "target_word": normalize_string(w),
-        })
+        evaluations.append(
+            {
+                "pattern": pattern,
+                "revealed_letters": revealed_letters,
+                "target_word": normalize_string(w),
+            }
+        )
 
     return {
         "guess": hint_word,

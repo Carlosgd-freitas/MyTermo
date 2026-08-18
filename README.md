@@ -13,6 +13,7 @@ The game ends if:
 
 # Setup
 1. Install all required packages by executing `pip install -r requirements.txt`.
+2. Install `npm` (sudo apt install npm), `prettier`
 
 # Customization
 1. Game title can be changed through the `TITLE` constant at `config.py`.
@@ -35,5 +36,4 @@ Examples:
 # Planned Features
 * Optional "Subject" box
 * Repository stucture overhaul
-* Code linting
 * Automated Tests
