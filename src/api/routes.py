@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 # Updated internal imports
-from src.config import GIVEN_TILES, MAX_ATTEMPTS, TARGET, TITLE
+from src.config import GIVEN_TILES, MAX_ATTEMPTS, SUBJECT, TARGET, TITLE
 from src.game.logic import (
     evaluate_guess,
     normalize_given_tiles,
@@ -84,20 +84,36 @@ async def favicon():
     return ("Favicon not found", 404)
 
 
-@router.get("/api/config")
-def get_config():
-    """Return initial board dimensions, fixed tiles, victory messages, and target info."""
-    target_norms = [normalize_string(w) for w in TARGET]
-    first_target = target_norms[0] if target_norms else ""
-    given_set = list(normalize_given_tiles(GIVEN_TILES))
+@router.get("/api/subject-image/{ext}")
+async def get_subject_image(ext: str):
+    path = BASE_DIR / f"subject.{ext}"
+    if path.exists():
+        return FileResponse(path)
+    return {"error": "Image not found"}
 
+
+@router.get("/api/config")
+async def get_config():
+    # Detect if a subject image exists in the root directory
+    image_url = None
+    for ext in ["png", "jpg", "jpeg"]:
+        if (BASE_DIR / f"subject.{ext}").exists():
+            image_url = f"/api/subject-image/{ext}"
+            break
+
+    # Determine standard target variables
+    target_list = TARGET if isinstance(TARGET, list) else [TARGET]
+    word_length = len(target_list[0]) if target_list else 5
+    
     return {
         "title": TITLE,
-        "length": len(first_target),
-        "target_count": len(TARGET),
-        "targets": target_norms,
+        "length": word_length,
+        "targets": target_list,
+        "target_count": len(target_list),
         "max_attempts": MAX_ATTEMPTS,
-        "given_tiles": given_set,
+        "given_tiles": GIVEN_TILES,
+        "subject_text": SUBJECT,
+        "subject_image_url": image_url,
     }
 
 

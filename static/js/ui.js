@@ -128,6 +128,9 @@ export function updateUITexts(currentLang, targetCount, gameEndState, openModalC
   const themeModalTitle = document.getElementById("theme-modal-title");
   if (themeModalTitle) themeModalTitle.innerText = TRANSLATIONS[currentLang].selectTheme;
 
+  const subjectBoxTitle = document.getElementById("subject-box-title");
+  if (subjectBoxTitle) subjectBoxTitle.innerText = TRANSLATIONS[currentLang].subjectTitle;
+
   const rulesTitle = document.getElementById("rules-title");
   if (rulesTitle) rulesTitle.innerText = TRANSLATIONS[currentLang].rules.title;
 
@@ -295,4 +298,51 @@ export function clearMessage() {
     clearTimeout(messageTimeout);
     messageTimeout = null;
   }
+}
+
+export function buildSubjectBox(text, imageUrl, lang) {
+  const existingBox = document.getElementById('subject-box');
+  if (existingBox) existingBox.remove();
+
+  if (!text && !imageUrl) return;
+
+  const grid = document.getElementById('grid');
+  
+  let wrapper = document.getElementById('game-board-wrapper');
+  if (!wrapper) {
+    wrapper = document.createElement('div');
+    wrapper.id = 'game-board-wrapper';
+    grid.parentNode.insertBefore(wrapper, grid);
+    wrapper.appendChild(grid);
+  }
+
+  const subjectBox = document.createElement('div');
+  subjectBox.id = 'subject-box';
+  subjectBox.className = 'subject-box';
+  
+  const titleText = (typeof TRANSLATIONS !== "undefined" && TRANSLATIONS[lang]) 
+    ? TRANSLATIONS[lang].subjectTitle 
+    : "Subject";
+
+  let innerHTML = `
+    <div class="subject-title-bar" id="subject-box-title">${titleText}</div>
+    <div class="subject-content">
+  `;
+  
+  if (imageUrl) {
+    innerHTML += `<img src="${imageUrl}" alt="Hint" class="subject-image" />`;
+  }
+  if (text) {
+    innerHTML += `<div class="subject-text">${text}</div>`;
+  }
+  
+  innerHTML += `</div><div class="subject-cover">?</div>`;
+  
+  subjectBox.innerHTML = innerHTML;
+  
+  subjectBox.addEventListener('click', () => {
+    subjectBox.classList.add('revealed');
+  });
+
+  wrapper.insertBefore(subjectBox, grid);
 }

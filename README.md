@@ -24,8 +24,9 @@ Examples:
     * `TARGET = ["BERRY", "JUICE"]` -> Valid multiple *targets*
 2. Define the maximum number of attempts through `MAX_ATTEMPTS` at [`src/config.py`](src/config.py).
 3. Define the characters given before each guess attempt through `GIVEN_TILES` at [`src/config.py`](src/config.py). Tiles containing given characters can't be overwritten by players. If the game has multiple *targets*, each *target* must have its given tiles in the same positions.
-4. Open the terminal at the project root and execute `uvicorn src.main:app --reload`. The application can be closed by pressing **CTRL+C** at the terminal or by closing the later.
-5. In a browser, enter the address `http://localhost:8000`.
+4. **(OPTIONAL)** Define either or both subject hint text and image through `SUBJECT` at [`src/config.py`](src/config.py), and [`subject.jpg`](subject.jpg), respectively.
+5. Open the terminal at the project root and execute `uvicorn src.main:app --reload`. The application can be closed by pressing **CTRL+C** at the terminal or by closing the later.
+6. In a browser, enter the address `http://localhost:8000`.
 
 # Customization
 1. Game and browser tab title can be defined through `TITLE` at [`src/config.py`](src/config.py).
@@ -39,5 +40,4 @@ Before modifying the code of **MyTermo** for the first time, some steps need to 
 2. Use the configured code linting and formatting packages on commits by executing `pre-commit install`.
 
 # Planned Features
-* Optional "Subject" box
 * Automated Tests

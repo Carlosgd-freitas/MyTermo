@@ -5,7 +5,7 @@ import {
   getTileElement, applyTheme, renderThemeModal, openThemeModal, closeThemeModal, 
   openRulesModal, closeRulesModal, openModal, closeModal, updateLangToggleUI, 
   updateUITexts, buildGrid, buildKeyboard, disableActionButtons, 
-  updateKeyStatus, showMessage, clearMessage 
+  updateKeyStatus, showMessage, clearMessage, buildSubjectBox, 
 } from './ui.js';
 
 let currentLang = localStorage.getItem("termo_lang") || "en";
@@ -107,6 +107,8 @@ async function initGame() {
 
     updateLangToggleUI(currentLang);
     refreshUI();
+
+    buildSubjectBox(config.subject_text, config.subject_image_url, currentLang);
 
     boardStates = Array.from({ length: targetCount }, (_, b) => {
       const targetWord = targets[b] || "";
