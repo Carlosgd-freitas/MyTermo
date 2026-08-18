@@ -68,6 +68,7 @@ class GuessRequest(BaseModel):
 
 class HintRequest(BaseModel):
     revealed_indices: list[int] = []
+    board_index: int = 0
 
 
 @router.get("/favicon.ico", include_in_schema=False)
@@ -135,11 +136,17 @@ def check_guess(request: GuessRequest):
 def get_hint(request: HintRequest):
     """Generate a single unrevealed letter hint for active game targets."""
     target_norms = [normalize_string(w) for w in TARGET]
-    primary_target = target_norms[0] if target_norms else ""
+    
+    # Target the specific board the user is struggling with
+    board_idx = request.board_index if 0 <= request.board_index < len(target_norms) else 0
+    active_target = target_norms[board_idx] if target_norms else ""
+    
     given_set = normalize_given_tiles(GIVEN_TILES)
-    target_len = len(primary_target)
+    target_len = len(active_target)
 
-    given_indices = {i for i, char in enumerate(primary_target) if char in given_set}
+    given_indices = {i for i, char in enumerate(active_target) if char in given_set}
+    
+    # Safely filter out both given tiles AND tiles the user already got right
     unrevealed = [
         i
         for i in range(target_len)
@@ -149,10 +156,12 @@ def get_hint(request: HintRequest):
     if not unrevealed:
         return {"error": "NO_HINTS_AVAILABLE"}
 
+    # Randomly select from strictly unknown tiles
     hint_idx = random.choice(unrevealed)
+    
     hint_chars = [
         char if (char in given_set or i == hint_idx or i in request.revealed_indices) else "."
-        for i, char in enumerate(primary_target)
+        for i, char in enumerate(active_target)
     ]
 
     hint_word = "".join(hint_chars)

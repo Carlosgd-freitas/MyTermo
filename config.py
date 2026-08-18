@@ -2,5 +2,5 @@
 
 TITLE = "MyTermo"
 TARGET = ["TERMO"]
-MAX_ATTEMPTS = 8
+MAX_ATTEMPTS = 6
 GIVEN_TILES = [" ", "-", "&"]

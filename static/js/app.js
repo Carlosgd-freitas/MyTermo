@@ -526,7 +526,6 @@ function handlePhysicalKeyboard(e) {
             .replace(/[\u0300-\u036f]/g, "")
             .toUpperCase();
 
-        // Include a space character inside the regex bracket[cite: 45]
         if (/^[A-Z\-& ]$/.test(normalizedKey)) { 
             processInput(normalizedKey);
         }
@@ -550,7 +549,7 @@ function processInput(key) {
             }
         }
         updateCurrentRow();
-    } else if (/^[A-Z\-& ]$/.test(key)) { // Accept space natively[cite: 45]
+    } else if (/^[A-Z\-& ]$/.test(key)) { 
         currentGuess[cursorIndex] = key;
         const nextIndex = getNextValidIndex(cursorIndex, 1);
         if (nextIndex > cursorIndex) {
@@ -608,6 +607,21 @@ async function useHint() {
     clearMessage();
     isAnimating = true;
 
+    // Find the first active (unsolved) board to target the hint
+    const activeBoardIdx = boardStates.findIndex(b => !b.solved);
+    const bIdx = activeBoardIdx === -1 ? 0 : activeBoardIdx;
+
+    // Dynamically find all indices currently marked as correct on this board
+    const knownCorrect = new Set(correctIndices);
+    for (let r = 0; r < currentAttempt; r++) {
+        for (let c = 0; c < wordLength; c++) {
+            const tile = getTileElement(bIdx, r, c);
+            if (tile && tile.classList.contains('correct')) {
+                knownCorrect.add(c);
+            }
+        }
+    }
+
     currentGuess = createEmptyGuessArray();
     updateCurrentRow();
 
@@ -615,7 +629,10 @@ async function useHint() {
         const response = await fetch('/api/hint', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ revealed_indices: Array.from(correctIndices) })
+            body: JSON.stringify({ 
+                revealed_indices: Array.from(knownCorrect),
+                board_index: bIdx
+            })
         });
 
         const data = await response.json();
