@@ -1,0 +1,138 @@
+/* General Icon Buttons */
+.icon-btn {
+  background-color: var(--key-bg, #4c4347);
+  color: var(--key-text, #ffffff);
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: opacity 0.2s;
+  font-family: inherit;
+}
+
+.icon-btn:hover {
+  opacity: 0.85;
+}
+
+/* User action buttons container */
+.actions {
+  display: flex;
+  gap: 10px;
+  margin: 2px 0 6px 0;
+}
+
+.actions button,
+.action-btn {
+  background-color: transparent;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+/* Specific Action Buttons */
+#giveup-btn,
+.giveup-btn {
+  color: var(--btn-giveup-text, var(--key-text));
+  background-color: var(--btn-giveup-bg, var(--key-bg));
+  border: 1px solid var(--tile-border);
+}
+
+#giveup-btn:hover:not(:disabled),
+.giveup-btn:hover:not(:disabled) {
+  color: var(--btn-giveup-bg, var(--key-bg));
+  background-color: var(--btn-giveup-text, var(--key-text));
+}
+
+#hint-btn,
+.hint-btn {
+  color: var(--btn-hint-text, var(--key-text));
+  background-color: var(--btn-hint-bg, var(--key-bg));
+  border: 1px solid var(--tile-border);
+}
+
+#hint-btn:hover:not(:disabled),
+.hint-btn:hover:not(:disabled) {
+  color: var(--btn-hint-bg, var(--key-bg));
+  background-color: var(--btn-hint-text, var(--key-text));
+}
+
+#info-btn,
+.info-btn {
+  color: var(--btn-info-text, var(--key-text));
+  background-color: var(--btn-info-bg, var(--key-bg));
+  border: 1px solid var(--tile-border);
+}
+
+#info-btn:hover:not(:disabled),
+.info-btn:hover:not(:disabled) {
+  color: var(--btn-info-bg, var(--key-bg));
+  background-color: var(--btn-info-text, var(--key-text));
+}
+
+.actions button:disabled,
+.action-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  border-color: #88747a;
+  color: #88747a;
+}
+
+/* Tooltip base constraints */
+button[data-tooltip] {
+  position: relative;
+  overflow: visible !important;
+}
+
+/* Tooltip message box */
+button[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--tile-border, #4c4347);
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Tooltip triangle arrow */
+button[data-tooltip]::before {
+  content: "";
+  position: absolute;
+  bottom: 105%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: var(--tile-border, #4c4347) transparent transparent transparent;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 1000;
+}
+
+/* Tooltip hover triggers */
+button[data-tooltip]:hover::after,
+button[data-tooltip]:hover::before,
+button[data-tooltip]:focus::after,
+button[data-tooltip]:focus::before {
+  opacity: 1;
+}

@@ -1,0 +1,71 @@
+/* Virtual keyboard container */
+#keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 580px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+}
+
+/* Keyboard horizontal groupings */
+.keyboard-row {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+}
+
+/* Individual keyboard key */
+.key {
+  background-color: var(--key-bg, #4c4347);
+  color: var(--key-text, #ffffff);
+  border: none;
+  border-radius: 4px;
+  font-size: 1.25rem;
+  font-weight: bold;
+  height: 52px;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-family: inherit;
+  transition: background-color 0.2s ease;
+}
+
+.key:active {
+  opacity: 0.8;
+}
+
+.key.large {
+  flex: 1.5;
+  font-size: 0.85rem;
+}
+
+.key.space-bar-key {
+  flex: 5;
+  max-width: 320px;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+}
+
+/* Keyboard key states */
+.key.correct {
+  background-color: var(--correct-bg, #3aa394) !important;
+  border-color: var(--correct-bg, #3aa394) !important;
+}
+
+.key.present {
+  background-color: var(--present-bg, #d3ad69) !important;
+  border-color: var(--present-bg, #d3ad69) !important;
+}
+
+.key.absent {
+  background-color: var(--absent-bg, #312a2c) !important;
+  border-color: var(--absent-bg, #312a2c) !important;
+}

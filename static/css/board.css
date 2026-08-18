@@ -1,0 +1,119 @@
+/* Game board layout grid */
+#grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  margin: 4px 0 8px 0;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 4px 8px;
+}
+
+/* Individual word columns */
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+/* Word rows */
+.row {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+}
+
+/* Visual separator between multiple boards */
+.board-divider {
+  width: 2px;
+  align-self: stretch;
+  background-color: var(--tile-border, #4c4347);
+  border-radius: 1px;
+  opacity: 0.6;
+  margin: 2px 0;
+}
+
+/* Individual letter tile */
+.tile {
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--tile-border);
+  background-color: var(--tile-bg);
+  border-radius: 4px;
+  color: var(--tile-text);
+  font-size: 1.4rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  box-sizing: border-box;
+  cursor: pointer;
+  perspective: 1000px;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.tile.flip {
+  animation: flip-horizontal 0.5s ease forwards;
+}
+
+/* Tile flip animation */
+@keyframes flip-horizontal {
+  0% {
+    transform: rotateY(0deg);
+  }
+  50% {
+    transform: rotateY(90deg);
+  }
+  100% {
+    transform: rotateY(0deg);
+  }
+}
+
+/* Tile states */
+.tile.filled {
+  border-color: var(--tile-text);
+}
+
+.tile.active-cursor {
+  border-color: var(--tile-border-selected, var(--tile-text));
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+}
+
+.tile.given-tile {
+  background-color: var(--tile-bg);
+  border-color: #88747a;
+  color: var(--text-color);
+  font-weight: bold;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.tile.correct {
+  background-color: var(--correct-bg, #3aa394) !important;
+  border-color: var(--correct-bg, #3aa394) !important;
+}
+
+.tile.present {
+  background-color: var(--present-bg, #d3ad69) !important;
+  border-color: var(--present-bg, #d3ad69) !important;
+}
+
+.tile.absent {
+  background-color: var(--absent-bg, #312a2c) !important;
+  border-color: var(--absent-bg, #312a2c) !important;
+}
+
+.tile.disabled-tile {
+  opacity: 0.35;
+  border-color: #383033;
+  background-color: #4a3f43;
+  cursor: not-allowed;
+}
